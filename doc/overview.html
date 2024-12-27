@@ -480,10 +480,20 @@ this plugin allows chain loading of config.
 <p>
 However like the Codehaus properties plugin this plugin has the following limitations:
 </p>
-<p>
-This plugin (as all other) is executed in the later phase - when project model is
-already build in memory.
-</p>
+<ul>
+<li>This plugin is executed  when project model is already built in memory.</li>
+<li> Properties read from resources by this plugin can not by used in project
+definitions in items like {@code <goal>}, {@code <version>} and so on.
+</li>
+<li>
+Properties read by plugin in one module are not propagated to other modules or child
+projects.
+</li>
+<li>
+Properties are only available for other plugins in runtime like for 
+maven-resource-plugin for filtering resources.
+</li>
+</ul>
 <p>
 So properties read from external files by this plugin can not by used in project
 definitions in items like {@code <goal>}, {@code <version>} and so on.
@@ -507,13 +517,15 @@ maven-resource-plugin for filtering resources.
     <execution>
       <phase>initialize</phase>
       <goals>
-        <goal>read-config</goal>
+        <goal>read-project-properties</goal>
       </goals>
       <configuration>
         <urls>
           <!-- Note that maven will interpolate first if you have variables in the url -->
           <url>file:///${project.basedir}/src/main/resources/db/database.properties</url>
         </urls>
+        <!-- Will replace already set values by default is set to true -->
+        <override>true</override>
       </configuration>
     </execution>
   </executions>
