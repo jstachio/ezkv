@@ -28,25 +28,24 @@ import io.jstach.ezkv.kvs.Variables;
  * <p>
  * However like the Codehaus properties plugin this plugin has the following limitations:
  * </p>
- * <p>
- * This plugin (as all other) is executed in the later phase - when project model is
- * already build in memory.
- * </p>
- * <p>
- * So properties read from external files by this plugin can not by used in project
- * definitions in items like {@code <goal>}, {@code <version>} and so on.
- * </p>
- * <p>
- * Properties read by plugin in one module are not propagated to other modules or child
- * projects.
- * </p>
- * <p>
- * Properties are only available for other plugins in runtime like for
- * maven-resource-plugin for filtering resources.
- * </p>
+ * <ul>
+ * <li>This plugin is executed when project model is already built in memory.</i>
+ * <li>Properties read from resources by this plugin can not by used in project
+ * definitions in items like {@code <goal>}, {@code <version>} and so on.</li>
+ * <li>Properties read by plugin in one module are not propagated to other modules or
+ * child projects.</li>
+ * <li>Properties are only available for other plugins in runtime like for
+ * maven-resource-plugin for filtering resources.</li>
+ * </ul>
  */
-@Mojo(name = "read-config", defaultPhase = LifecyclePhase.NONE, requiresProject = true, threadSafe = true)
+@Mojo(name = "read-project-properties", defaultPhase = LifecyclePhase.NONE, requiresProject = true, threadSafe = true)
 public class ReadConfigMojo extends AbstractMojo {
+
+	/**
+	 * Property to skip plugin execution by setting {@value #SKIP_PROPERTY} to
+	 * <code>true</code>.
+	 */
+	public static final String SKIP_PROPERTY = "ezkv.skipLoadProperties";
 
 	@Parameter(defaultValue = "${project}", readonly = true, required = true)
 	private @Nullable MavenProject project;
@@ -68,6 +67,19 @@ public class ReadConfigMojo extends AbstractMojo {
 	 */
 	@Parameter(required = true)
 	private String[] urls = new String[0];
+
+	/**
+	 * Skip plugin execution.
+	 */
+	@Parameter(defaultValue = "false", property = SKIP_PROPERTY)
+	private boolean skipLoadProperties = false;
+
+	/**
+	 * Determine, whether existing properties should be overridden or not. Default:
+	 * <code>true</code>.
+	 */
+	@Parameter(defaultValue = "true")
+	private boolean override = true;
 
 	/**
 	 * Default scope for test access.
@@ -96,10 +108,14 @@ public class ReadConfigMojo extends AbstractMojo {
 		if (_urls == null || _urls.length < 1) {
 			throw new MojoExecutionException("urls not set");
 		}
+
 		var log = getLog();
 		var logger = new MavenLogger(log);
 		var session = requireInjected(this.session, "session");
 		var project = requireInjected(this.project, "project");
+		var override = this.override;
+		var originalProperties = project.getProperties();
+
 		KeyValuesEnvironment env = new KeyValuesEnvironment() {
 			@Override
 			public Properties getSystemProperties() {
@@ -132,7 +148,6 @@ public class ReadConfigMojo extends AbstractMojo {
 		loader.add(missingSystemPropeties);
 		loader.variables(Variables::ofSystemEnv);
 		loader.variables(Variables::ofSystemProperties);
-		Properties originalProperties = project.getProperties();
 		// TODO maybe a bad idea?
 		loader.add(originalProperties::getProperty);
 
@@ -147,7 +162,9 @@ public class ReadConfigMojo extends AbstractMojo {
 			// TODO should we do some sort of lock here?
 			// Technically properties is synchronized
 			for (var kv : kvs) {
-				originalProperties.put(kv.key(), kv.value());
+				if (override || originalProperties.containsKey(kv.key())) {
+					originalProperties.put(kv.key(), kv.value());
+				}
 			}
 
 		}
@@ -180,6 +197,14 @@ public class ReadConfigMojo extends AbstractMojo {
 			}
 		}
 
+	}
+
+	void setSkipLoadProperties(boolean skipLoadProperties) {
+		this.skipLoadProperties = skipLoadProperties;
+	}
+
+	void setOverride(boolean override) {
+		this.override = override;
 	}
 
 }
