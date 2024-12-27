@@ -465,6 +465,60 @@ command-line arguments, and logging. This is particularly useful for unit testin
 <p>This is the entry point into Ezkv and is used to load the initial part of the chain of resources. 
 The bootstrapping part of your application will call it first and will often convert or pass the loaded key values to another system.</p>
 
+<h2 id="extensions">Extensions and Integration</h2>
+
+Most of the modules are explained below in the  <a href="#all-modules-table">modules table</a>.
+
+<h3 id="maven-plugin">Maven Plugin</h3>
+
+EZKV has a maven plugin that will load config as properties in a Maven build.
+
+This plugin is similar to <a href=
+"https://www.mojohaus.org/properties-maven-plugin/">properties-maven-plugin</a> except
+that it will use EZKV to load the properties. Unlike the Codehaus properties plugin
+this plugin allows chain loading of config.
+<p>
+However like the Codehaus properties plugin this plugin has the following limitations:
+</p>
+<p>
+This plugin (as all other) is executed in the later phase - when project model is
+already build in memory.
+</p>
+<p>
+So properties read from external files by this plugin can not by used in project
+definitions in items like {@code <goal>}, {@code <version>} and so on.
+</p>
+<p>
+Properties read by plugin in one module are not propagated to other modules or child
+projects.
+</p>
+<p>
+Properties are only available for other plugins in runtime like for
+maven-resource-plugin for filtering resources.
+</p>
+
+<strong>Example:</strong>
+
+{@snippet lang = xml :
+<plugin>
+  <groupId>io.jstach.ezkv</groupId>
+  <artifactId>ezkv-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <phase>initialize</phase>
+      <goals>
+        <goal>read-config</goal>
+      </goals>
+      <configuration>
+        <urls>
+          <!-- Note that maven will interpolate first if you have variables in the url -->
+          <url>file:///${project.basedir}/src/main/resources/db/database.properties</url>
+        </urls>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+}
 
 </div>
 </body>
