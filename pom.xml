@@ -85,6 +85,13 @@
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-core</artifactId>
         <version>${maven.core.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>${maven.core.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.jspecify</groupId>
@@ -977,5 +984,6 @@
     <module>ezkv-boot</module>
     <module>ezkv-dotenv</module>
     <module>ezkv-json5</module>
+    <module>ezkv-maven-plugin</module>
   </modules>
 </project>
