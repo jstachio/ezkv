@@ -54,9 +54,11 @@ public interface KeyValuesLoader {
 
 		final Function<Builder, KeyValuesLoader> loaderFactory;
 
-		final List<NamedKeyValuesSource> sources = new ArrayList<>();
+		final List<Function<KeyValuesEnvironment, ? extends NamedKeyValuesSource>> sources = new ArrayList<>();
 
-		final List<Function<KeyValuesEnvironment, Variables>> variables = new ArrayList<>();
+		final List<Function<KeyValuesEnvironment, ? extends Variables>> variables = new ArrayList<>();
+
+		int resourceCount = 0;
 
 		Builder(Function<Builder, KeyValuesLoader> loaderFactory) {
 			super();
@@ -69,7 +71,8 @@ public interface KeyValuesLoader {
 		 * @return this builder instance
 		 */
 		public Builder add(KeyValuesResource resource) {
-			sources.add(resource);
+			sources.add(e -> resource);
+			resourceCount++;
 			return this;
 		}
 
@@ -92,7 +95,7 @@ public interface KeyValuesLoader {
 		 * @return this builder instance
 		 */
 		public Builder add(String name, KeyValues keyValues) {
-			sources.add(new NamedKeyValues(name, keyValues));
+			sources.add(e -> new NamedKeyValues(name, keyValues));
 			return this;
 		}
 
@@ -102,7 +105,7 @@ public interface KeyValuesLoader {
 		 * @return this builder instance
 		 */
 		public Builder add(URI uri) {
-			return add(KeyValuesResource.builder(uri).build());
+			return add(KeyValuesResource.builder(uri).name("resource" + resourceCount).build());
 		}
 
 		/**
@@ -135,9 +138,21 @@ public interface KeyValuesLoader {
 		 * @return this
 		 * @see Variables#ofSystemProperties(KeyValuesEnvironment)
 		 * @see Variables#ofSystemEnv(KeyValuesEnvironment)
+		 * @see #add(Variables)
 		 */
 		public Builder variables(Function<KeyValuesEnvironment, Variables> variablesFactory) {
 			this.variables.add(variablesFactory);
+			return this;
+		}
+
+		/**
+		 * Adds resource that will be resolved based on the environment.
+		 * @param resourceFactory function to create resource from environment.
+		 * @return this
+		 * @see #add(KeyValuesResource)
+		 */
+		public Builder resource(Function<KeyValuesEnvironment, KeyValuesResource> resourceFactory) {
+			this.sources.add(resourceFactory);
 			return this;
 		}
 

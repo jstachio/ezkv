@@ -84,8 +84,8 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 			var env = environment();
 			var defaultResource = env.defaultResource();
 			var variables = Variables.copyOf(b.variables.stream().map(vf -> vf.apply(env)).toList());
-			List<NamedKeyValuesSource> resources = b.sources.isEmpty() ? List.of(defaultResource)
-					: List.copyOf(b.sources);
+			var sources = b.sources.stream().map(s -> s.apply(env)).toList();
+			List<NamedKeyValuesSource> resources = sources.isEmpty() ? List.of(defaultResource) : List.copyOf(sources);
 			return DefaultKeyValuesSourceLoader.of(this, variables, resources);
 		};
 		return new KeyValuesLoader.Builder(loaderFactory);
