@@ -29,10 +29,10 @@ import io.jstach.ezkv.kvs.Variables;
  * However like the Codehaus properties plugin this plugin has the following limitations:
  * </p>
  * <ul>
- * <li>This plugin is executed when project model is already built in memory.</li>
+ * <li>This plugin is executed when the project model is already built in memory.</li>
  * <li>Properties read from resources by this plugin can not by used in project
- * definitions in items like {@code <goal>}, {@code <version>} and so on.</li>
- * <li>Properties read by plugin in one module are not propagated to other modules or
+ * definitions in elements like {@code <goal>}, {@code <version>} and so on.</li>
+ * <li>Properties read by the plugin in one module are not propagated to other modules or
  * child projects.</li>
  * <li>Properties are only available for other plugins in runtime like for
  * maven-resource-plugin for filtering resources.</li>
@@ -146,8 +146,8 @@ public class ReadConfigMojo extends AbstractMojo {
 			}
 		};
 		loader.add(missingSystemPropeties);
-		loader.variables(Variables::ofSystemEnv);
 		loader.variables(Variables::ofSystemProperties);
+		loader.variables(Variables::ofSystemEnv);
 		// TODO maybe a bad idea?
 		loader.add(originalProperties::getProperty);
 

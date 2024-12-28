@@ -474,40 +474,29 @@ Most of the modules are explained below in the  <a href="#all-modules-table">mod
 EZKV has a maven plugin that will load config as properties in a Maven build.
 
 This plugin is similar to <a href=
-"https://www.mojohaus.org/properties-maven-plugin/">properties-maven-plugin</a> except
-that it will use EZKV to load the properties. Unlike the Codehaus properties plugin
+"https://www.mojohaus.org/properties-maven-plugin/">properties-maven-plugin</a> and almost a drop in replacement except
+that it will use EZKV to load the properties. Unlike the Codehaus properties-maven-plugin 
 this plugin allows chain loading of config.
+
 <p>
 However like the Codehaus properties plugin this plugin has the following limitations:
 </p>
-<ul>
-<li>This plugin is executed  when project model is already built in memory.</li>
-<li> Properties read from resources by this plugin can not by used in project
-definitions in items like {@code <goal>}, {@code <version>} and so on.
-</li>
-<li>
-Properties read by plugin in one module are not propagated to other modules or child
-projects.
-</li>
-<li>
-Properties are only available for other plugins in runtime like for 
-maven-resource-plugin for filtering resources.
-</li>
-</ul>
-<p>
-So properties read from external files by this plugin can not by used in project
-definitions in items like {@code <goal>}, {@code <version>} and so on.
-</p>
-<p>
-Properties read by plugin in one module are not propagated to other modules or child
-projects.
-</p>
-<p>
-Properties are only available for other plugins in runtime like for
-maven-resource-plugin for filtering resources.
-</p>
 
-<strong>Example:</strong>
+<ul>
+  <li>This plugin is executed when the project model is already built in memory.</li>
+  <li> Properties read from resources by this plugin can not by used in project
+    definitions in elements like {@code <goal>}, {@code <version>} and so on.
+  </li>
+  <li>
+  Properties read by this plugin in one module are not propagated to other modules or child
+  projects.
+  </li>
+  <li>
+  Properties are only available for other plugins in runtime like for maven-resource-plugin for filtering resources.
+  </li>
+</ul>
+
+<strong>Example Maven Plugin:</strong>
 
 {@snippet lang = xml :
 <plugin>
@@ -515,6 +504,7 @@ maven-resource-plugin for filtering resources.
   <artifactId>ezkv-maven-plugin</artifactId>
   <executions>
     <execution>
+      <!-- The earlier the phase the better so that more plugins can read the newer properties -->
       <phase>initialize</phase>
       <goals>
         <goal>read-project-properties</goal>
@@ -531,6 +521,12 @@ maven-resource-plugin for filtering resources.
   </executions>
 </plugin>
 }
+
+The plugin can be disabled with <code>ezkv.skipLoadProperties=true</code> property.
+<p>
+The plugin is a great choice for plugins that connect to databases like jOOQ or Flyway/Liquibase.
+You can load the database credentials stored from a varierty of sources.
+</p>
 
 </div>
 </body>
