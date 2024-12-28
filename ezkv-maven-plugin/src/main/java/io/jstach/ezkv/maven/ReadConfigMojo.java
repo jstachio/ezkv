@@ -29,7 +29,7 @@ import io.jstach.ezkv.kvs.Variables;
  * However like the Codehaus properties plugin this plugin has the following limitations:
  * </p>
  * <ul>
- * <li>This plugin is executed when project model is already built in memory.</i>
+ * <li>This plugin is executed when project model is already built in memory.</li>
  * <li>Properties read from resources by this plugin can not by used in project
  * definitions in items like {@code <goal>}, {@code <version>} and so on.</li>
  * <li>Properties read by plugin in one module are not propagated to other modules or
