@@ -985,5 +985,6 @@
     <module>ezkv-dotenv</module>
     <module>ezkv-json5</module>
     <module>ezkv-maven-plugin</module>
+    <module>ezkv-xml</module>
   </modules>
 </project>
