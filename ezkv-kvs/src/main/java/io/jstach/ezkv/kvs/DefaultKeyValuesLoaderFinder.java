@@ -40,7 +40,7 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 
 		@Override
 		boolean matches(KeyValuesResource resource, KeyValuesEnvironment environment) {
-			return filePathOrNull(resource.uri(), environment.getFileSystem()) != null;
+			return isFileURI(resource.uri());
 		}
 	},
 	SYSTEM(KeyValuesResource.SCHEMA_SYSTEM) {
@@ -163,8 +163,9 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 	protected abstract KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException;
 
 	protected KeyValues load(LoaderContext context, KeyValuesResource resource, Parser parser) throws IOException {
-		var is = openURI(resource.uri(), context.environment().getResourceStreamLoader(),
-				context.environment().getFileSystem());
+		var fileSystem = context.environment().getFileSystem();
+		var cwd = context.environment().getCWD();
+		var is = openURI(resource.uri(), context.environment().getResourceStreamLoader(), fileSystem, cwd);
 		return parser.parse(resource, is);
 	}
 
@@ -215,15 +216,35 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		return kvs;
 	}
 
-	static @Nullable Path filePathOrNull(URI u, FileSystem fileSystem) {
+	static boolean isFileURI(URI u) {
+		if ("file".equals(u.getScheme())) {
+			return true;
+		}
+		if (u.getScheme() == null && u.getPath() != null) {
+			return true;
+		}
+		return false;
+	}
+
+	static @Nullable Path filePathOrNull(URI u, FileSystem fileSystem, @Nullable Path cwd) {
 		String path;
 		if ("file".equals(u.getScheme())) {
-			return fileSystem.provider().getPath(u);
+			return resolvePath(fileSystem.provider().getPath(u), cwd);
 		}
 		else if (u.getScheme() == null && (path = u.getPath()) != null) {
-			return fileSystem.getPath(path);
+			return resolvePath(fileSystem.getPath(path), cwd);
 		}
 		return null;
+	}
+
+	static Path resolvePath(Path path, @Nullable Path cwd) {
+		if (cwd == null) {
+			return path;
+		}
+		if (path.isAbsolute()) {
+			return path;
+		}
+		return cwd.resolve(path);
 	}
 
 	static String normalizePath(URI u) {
@@ -237,7 +258,8 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		return p;
 	}
 
-	static InputStream openURI(URI u, ResourceStreamLoader loader, FileSystem fileSystem) throws IOException {
+	static InputStream openURI(URI u, ResourceStreamLoader loader, FileSystem fileSystem, @Nullable Path cwd)
+			throws IOException {
 		if ("classpath".equals(u.getScheme())) {
 			String path = u.getPath();
 			if (path == null) {
@@ -254,7 +276,7 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 			return stream;
 		}
 
-		var path = filePathOrNull(u, fileSystem);
+		var path = filePathOrNull(u, fileSystem, cwd);
 		if (path != null) {
 			return Files.newInputStream(path);
 		}

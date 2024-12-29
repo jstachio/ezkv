@@ -1,6 +1,7 @@
 package io.jstach.ezkv.maven;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
@@ -82,6 +83,13 @@ public class ReadConfigMojo extends AbstractMojo {
 	private boolean override = true;
 
 	/**
+	 * Whether to use the real current working directory or use the project
+	 * {@code basedir}.
+	 */
+	@Parameter(defaultValue = "false")
+	private boolean realCWD = false;
+
+	/**
 	 * Default scope for test access.
 	 * @param urls The URLs to set for tests.
 	 */
@@ -115,6 +123,7 @@ public class ReadConfigMojo extends AbstractMojo {
 		var project = requireInjected(this.project, "project");
 		var override = this.override;
 		var originalProperties = project.getProperties();
+		var path = realCWD ? null : project.getBasedir().toPath().toAbsolutePath();
 
 		KeyValuesEnvironment env = new KeyValuesEnvironment() {
 			@Override
@@ -126,12 +135,19 @@ public class ReadConfigMojo extends AbstractMojo {
 			public KeyValuesEnvironment.Logger getLogger() {
 				return logger;
 			}
+
+			@Override
+			public @Nullable Path getCWD() {
+				return path;
+			}
 		};
-		var loader = KeyValuesSystem.builder()
+
+		var system = KeyValuesSystem.builder()
 			.useServiceLoader() //
 			.environment(env) //
-			.build()
-			.loader();
+			.build();
+
+		var loader = system.loader();
 
 		final Variables missingSystemPropeties = new Variables() {
 			final Set<String> requiredSystemProperties = Collections.singleton("user.home");
@@ -155,9 +171,14 @@ public class ReadConfigMojo extends AbstractMojo {
 			loader.add(url);
 		}
 		try {
+			if (log.isDebugEnabled()) {
+				var cwd = system.environment().getCWD();
+				cwd = cwd == null ? system.environment().getFileSystem().getPath(".") : cwd;
+				log.debug("CWD: " + cwd.toAbsolutePath());
+			}
 			var kvs = loader.load().memoize();
 			if (log.isDebugEnabled()) {
-				getLog().debug("Found keys: " + kvs);
+				log.debug("Found keys: " + kvs);
 			}
 			// TODO should we do some sort of lock here?
 			// Technically properties is synchronized
@@ -169,7 +190,7 @@ public class ReadConfigMojo extends AbstractMojo {
 
 		}
 		catch (IOException e) {
-			throw new MojoExecutionException("failed to load config", e);
+			throw new MojoExecutionException("Failed to load key values as properties", e);
 		}
 
 	}
@@ -205,6 +226,10 @@ public class ReadConfigMojo extends AbstractMojo {
 
 	void setOverride(boolean override) {
 		this.override = override;
+	}
+
+	void setRealCWD(boolean realCWD) {
+		this.realCWD = realCWD;
 	}
 
 }

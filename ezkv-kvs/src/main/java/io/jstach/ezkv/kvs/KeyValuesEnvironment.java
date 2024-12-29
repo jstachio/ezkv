@@ -7,6 +7,7 @@ import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -109,6 +110,14 @@ public interface KeyValuesEnvironment {
 	 */
 	default FileSystem getFileSystem() {
 		return FileSystems.getDefault();
+	}
+
+	/**
+	 * Gets the current working directory possibly using the passed in filesystem.
+	 * @return cwd or {@code null}
+	 */
+	default @Nullable Path getCWD() {
+		return null;
 	}
 
 	/**

@@ -516,6 +516,14 @@ However like the Codehaus properties plugin this plugin has the following limita
         </urls>
         <!-- Will replace already set values by default is set to true -->
         <override>true</override>
+          <!-- 
+          By default EZKV will use the project.basedir as the CWD.
+          Maven usually sets project.basedir for CWD for unit tests (surefire) and other plugins.
+          Set this to true to use the actual system CWD (usually the terminal current working 
+          and not always the project basedir). However realize your build may not be repeatable
+          if it is set to true.
+          -->
+          <realCWD>false</realCWD>
       </configuration>
     </execution>
   </executions>
