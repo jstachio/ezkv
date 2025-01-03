@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
@@ -68,6 +69,114 @@ public interface Variables extends Function<String, @Nullable String> {
 				return Optional.of(Map.entry(k, prop));
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Find a variable key-value tuple based on vararg keys. This method provides
+	 * ergonomics for searching for fallback keys.
+	 * @param names to use for keys.
+	 * @return optional entry where the key is the first matching key and the value is the
+	 * value associated with that key.
+	 */
+	default Optional<Entry<String, String>> findEntry(SequencedCollection<String> names) {
+		for (String k : names) {
+			String prop = getValue(k);
+			if (prop != null)
+				return Optional.of(Map.entry(k, prop));
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * A mixin for enums or similar representing parameters that provides some validation
+	 * on retrieving variables.
+	 */
+	public interface Parameter {
+
+		/**
+		 * Keys of the parameter.
+		 * @return keys to try.
+		 */
+		List<String> keys();
+
+		/**
+		 * Require a value and transform or throw exception if missing or invalid.
+		 * @param <T> transformed type.
+		 * @param variables variables to retrieve value from.
+		 * @param compute function to transform value.
+		 * @return transformed value.
+		 * @throws IllegalArgumentException if not found or compute function is invalid.
+		 */
+		default <T> T require(Variables variables, Function<String, T> compute) throws IllegalArgumentException {
+			var entry = entry(variables);
+			try {
+				return compute.apply(entry.getValue());
+			}
+			catch (RuntimeException e) {
+				throw new IllegalArgumentException("Parameter is invalid. key='%s', value='%s. %s'"
+					.formatted(entry.getKey(), entry.getValue(), e.getMessage()), e);
+			}
+		}
+
+		/**
+		 * Require a value and transform or throw exception if missing or invalid.
+		 * @param <T> transformed type.
+		 * @param variables variables to retrieve value from.
+		 * @param compute function to transform value.
+		 * @param fallback returned if missing.
+		 * @return transformed value.
+		 * @throws IllegalArgumentException if not found or compute function is invalid.
+		 */
+		default <T> T requireElse(Variables variables, Function<String, T> compute, T fallback)
+				throws IllegalArgumentException {
+			var entry = variables.findEntry(keys()).orElse(null);
+			if (entry == null) {
+				return fallback;
+			}
+			try {
+				return compute.apply(entry.getValue());
+			}
+			catch (RuntimeException e) {
+				throw new IllegalArgumentException("Parameter is invalid. key='%s', value='%s. %s'"
+					.formatted(entry.getKey(), entry.getValue(), e.getMessage()), e);
+			}
+		}
+
+		/**
+		 * Require a value.
+		 * @param variables to retrieve value from.
+		 * @return value.
+		 * @throws IllegalArgumentException if value is missing.
+		 */
+		default String require(Variables variables) throws IllegalArgumentException {
+			return entry(variables).getValue();
+		}
+
+		/**
+		 * Require a value.
+		 * @param variables to retrieve value from.
+		 * @param fallback if value is missing from variables return fallback.
+		 * @return value.
+		 */
+		default String requireElse(Variables variables, String fallback) {
+			var v = variables.findEntry(keys()).map(e -> e.getValue()).orElse(null);
+			return Objects.requireNonNullElse(v, fallback);
+		}
+
+		/**
+		 * Requires the parameter.
+		 * @param variables variables.
+		 * @return key and value.
+		 */
+		default Entry<String, String> entry(Variables variables) {
+			var ks = keys();
+			Entry<String, String> e = variables.findEntry(ks).orElseThrow(() -> {
+				String k = ks.size() == 1 ? ks.get(0) : ks.toString();
+				throw new IllegalArgumentException("Parameter is missing. key(s) tried = '" + k + "'");
+			});
+			return e;
+		}
+
 	}
 
 	/**

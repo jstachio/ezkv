@@ -364,6 +364,11 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	public static final String KEY_PARM = "parm";
 
 	/**
+	 * A synonym for {@link #KEY_PARAM}.
+	 */
+	public static final String KEY_P = "p";
+
+	/**
 	 * A synonym for {@link #KEY_FILTER}.
 	 */
 	public static final String KEY_FILT = "filt";

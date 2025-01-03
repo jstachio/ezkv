@@ -460,7 +460,7 @@ enum DefaultKeyValuesResourceParser implements KeyValuesResourceParser {
 		LOAD(KeyValuesResource.KEY_LOAD), //
 		FLAGS(KeyValuesResource.KEY_FLAGS, KeyValuesResource.KEY_FLAG), //
 		MEDIA_TYPE(KeyValuesResource.KEY_MEDIA_TYPE, KeyValuesResource.KEY_MIME), //
-		PARAM(KeyValuesResource.KEY_PARAM, KeyValuesResource.KEY_PARM), //
+		PARAM(KeyValuesResource.KEY_PARAM, KeyValuesResource.KEY_PARM, KeyValuesResource.KEY_P), //
 		FILTER(KeyValuesResource.KEY_FILTER, KeyValuesResource.KEY_FILT);
 
 		final List<String> keys;
