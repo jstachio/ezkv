@@ -12,6 +12,7 @@ import java.util.SequencedCollection;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import io.jstach.ezkv.kvs.Variables.Parameters;
@@ -113,8 +114,8 @@ public interface Variables extends Function<String, @Nullable String> {
 				return compute.apply(entry.getValue());
 			}
 			catch (RuntimeException e) {
-				throw new IllegalArgumentException("Parameter is invalid. key='%s', value='%s. %s'"
-					.formatted(entry.getKey(), entry.getValue(), e.getMessage()), e);
+				String message = message(entry, e);
+				throw new IllegalArgumentException(message, e);
 			}
 		}
 
@@ -137,9 +138,17 @@ public interface Variables extends Function<String, @Nullable String> {
 				return compute.apply(entry.getValue());
 			}
 			catch (RuntimeException e) {
-				throw new IllegalArgumentException("Parameter is invalid. key='%s', value='%s. %s'"
-					.formatted(entry.getKey(), entry.getValue(), e.getMessage()), e);
+				String message = message(entry, e);
+				throw new IllegalArgumentException(message, e);
 			}
+		}
+
+		private static String message(Entry<String, String> entry, RuntimeException e) {
+			String message = e.getMessage();
+			message = message == null ? "" : " " + message;
+			message = "Parameter is invalid. key='%s', value='%s.%s'".formatted(entry.getKey(), entry.getValue(),
+					message);
+			return message;
 		}
 
 		/**
