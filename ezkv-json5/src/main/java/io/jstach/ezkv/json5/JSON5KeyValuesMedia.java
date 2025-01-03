@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -39,11 +40,11 @@ import io.jstach.ezkv.kvs.Variables;
  * JSON is not flat and is more of a tree where as EZKV KeyValues are and only
  * support string values. <strong>Thus the parser flattens the JSON
  * based on some heuristics.</strong> JSON objects are easy to flatten but
- * JSON arrays need special handling. 
+ * JSON arrays need special handling.
  * </p>
- * 
+ *
  * Here is an example of the default flattening:
- * 
+ *
  * {@snippet lang = json :
  * 	{
  * 		"a": {
@@ -52,38 +53,38 @@ import io.jstach.ezkv.kvs.Variables;
  * 		}
  * 	}
  * }
- * 
+ *
  * Here is the corresponding key values (notice duplicates):
- * 
+ *
  * {@snippet lang = properties :
  * a.b=1
  * a.b=2.0
  * a.b.c=3
  * a.d=value
  * }
- * 
+ *
  * <p>
  * Because EZKV supports duplicates and order matters the data is not lost but this
  * might be confusing. Another option is to generate array indices in the keys.
  * </p>
- * 
+ *
  * Assume we load a resource with the previous JSON like:
- * 
+ *
  * {@snippet lang = properties :
  *
  * _load_a=classpath:/a.json5?_param_json5_arraykey=array
  *
  * }
- * 
+ *
  * We will get flattened key values that look like:
- * 
+ *
  * {@snippet lang = properties :
  * a.b[0]=1
  * a.b[1]=2.0
  * a.b[2].c=3
  * a.d=value
  * }
- * 
+ *
  * Because both formats may not be what you want you might want to use a
  * {@linkplain KeyValuesFilter filter}  to clean up the results.
  *
@@ -92,7 +93,7 @@ import io.jstach.ezkv.kvs.Variables;
  * Service Loader you can add an instance of this class to
  * {@link io.jstach.ezkv.kvs.KeyValuesSystem.Builder}.
  * </p>
- * 
+ *
  * @apiNote This is not included with the core ezkv module because JSON5 is still evolving
  * and likely to keep changing.
  * @see #ARRAY_KEY_PARAM
@@ -215,13 +216,27 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 
 	@Override
 	public Parser parser(Variables parameters) {
-		var arrayKeyOption = ArrayKeyOption.parse(parameters.getValue(ARRAY_KEY_PARAM));
-		String separator = parameters.getValue(SEPARATOR_PARAM);
-		if (separator == null || separator.isBlank()) {
-			separator = DEFAULT_SEPARATOR;
-		}
-		boolean rawNumber = Boolean.parseBoolean(parameters.getValue(NUMBER_RAW_PARAM));
+		var arrayKeyOption = Param.ARRAY.requireElse(parameters, ArrayKeyOption::parse, ArrayKeyOption.defaults());
+		String separator = Param.SEPARATOR.requireElse(parameters, DEFAULT_SEPARATOR);
+		boolean rawNumber = Param.NUMBER.requireElse(parameters, Boolean::parseBoolean, false);
 		return new JSON5KeyValuesParser(JSON5KeyValuesParser.defaultOptions, arrayKeyOption, separator, rawNumber);
+	}
+
+	enum Param implements Variables.Parameter {
+
+		ARRAY(ARRAY_KEY_PARAM), SEPARATOR(SEPARATOR_PARAM), NUMBER(NUMBER_RAW_PARAM);
+
+		private final String key;
+
+		private Param(String key) {
+			this.key = key;
+		}
+
+		@Override
+		public List<String> keys() {
+			return List.of(key);
+		}
+
 	}
 
 	@Override
