@@ -174,8 +174,6 @@ for your own applications/libraries.
 
 ### Ezkv Maven plugin
 
-(Coming soon. My company has an internal implementation that I just need to port).
-
 The Ezkv maven plugin is a far more capable replacement of the [Codehaus Properties Maven plugin](https://www.mojohaus.org/properties-maven-plugin/).
 This allows you to use much of the same configuration you would use in your application during the build process.
 This is particularly useful for database code generator plugins like [jOOQ](https://www.jooq.org/doc/latest/manual/code-generation/codegen-maven/) or Flyways Maven plugins.
