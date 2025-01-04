@@ -191,6 +191,12 @@ import io.jstach.ezkv.kvs.Variables.Parameters;
  * </tbody>
  * </table>
  *
+ * <h4>Filter Target</h4> The {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_GREP}
+ * and {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SED} filters by default target
+ * the keys for search and manipulation. These filter can target the value by suffixing
+ * with {@value #FILTER_TARGET_VALUE} or {@link #FILTER_TARGET_VAL}.
+ *
+ * <h3>Example</h3>
  *
  * Example usage for building a {@code KeyValuesResource}:
  * {@snippet :
@@ -470,6 +476,25 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * akin to <code>String.join(expression)</code>
 	 */
 	public static final String FILTER_JOIN = "join";
+
+	/**
+	 * This suffix on the end of the filter name will tell filters that support to target
+	 * the key. Example: suff?_filter_grep_key=grep_key
+	 */
+	public static final String FILTER_TARGET_KEY = "_key";
+
+	/**
+	 * This suffix on the end of the filter name will tell filters that support to target
+	 * the value. Example: suff?_filter_grep_value=grep_key
+	 * @see #FILTER_TARGET_VAL
+	 */
+	public static final String FILTER_TARGET_VALUE = "_value";
+
+	/**
+	 * Synonym to {@link #FILTER_TARGET_VALUE}.
+	 * @see #FILTER_TARGET_VALUE
+	 */
+	public static final String FILTER_TARGET_VAL = "_val";
 
 	/**
 	 * Returns the URI of the resource.
