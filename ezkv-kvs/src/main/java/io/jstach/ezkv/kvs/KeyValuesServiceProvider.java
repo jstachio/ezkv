@@ -5,6 +5,7 @@ import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesMediaFinder;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder.LoaderContext;
@@ -199,8 +200,12 @@ public sealed interface KeyValuesServiceProvider {
 		 * resources
 		 * @param parameters resource parameters that come from
 		 * {@link KeyValuesResource#KEY_PARAM} keys.
+		 * @param keyValueIgnore keys that should be ignored and not filtered if the
+		 * predicate returns <code>true</code>.
+		 * @see KeyValuesResource#FILTER_SKIP_RESOURCE_KEYS_PARAM
 		 */
-		public record FilterContext(KeyValuesEnvironment environment, Parameters parameters) {
+		public record FilterContext(KeyValuesEnvironment environment, Parameters parameters,
+				Predicate<KeyValue> keyValueIgnore) {
 		}
 
 		/**

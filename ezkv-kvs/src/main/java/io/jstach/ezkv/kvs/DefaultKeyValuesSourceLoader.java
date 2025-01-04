@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -104,7 +105,7 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 			var kvs = switch (resource) {
 				case KeyValuesResource r -> {
 					InternalKeyValuesResource normalizedResource = normalizeResource(r, node);
-					yield load(node, normalizedResource, flags);
+					yield loadAndFilter(node, normalizedResource, flags);
 				}
 				case NamedKeyValues _kvs -> _kvs.keyValues();
 			};
@@ -197,7 +198,10 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 		KeyValuesSource.fullDescribe(sb, node.current);
 	}
 
-	KeyValues load(Node node, InternalKeyValuesResource resource, Set<LoadFlag> flags)
+	/*
+	 * The load here will also apply filtering.
+	 */
+	KeyValues loadAndFilter(Node node, InternalKeyValuesResource resource, Set<LoadFlag> flags)
 			throws IOException, FileNotFoundException {
 		if (!resource.normalized()) {
 			throw new IllegalStateException("bug");
@@ -245,7 +249,10 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 		if (filters.isEmpty()) {
 			return keyValues;
 		}
-		FilterContext context = new FilterContext(system.environment(), resource.parameters());
+		boolean skipResourceKeys = Boolean
+			.parseBoolean(resource.parameters().getValue(KeyValuesResource.FILTER_SKIP_RESOURCE_KEYS_PARAM));
+		Predicate<KeyValue> keyValuePredicate = skipResourceKeys ? resourceParser::isResourceKey : kv -> false;
+		FilterContext context = new FilterContext(system.environment(), resource.parameters(), keyValuePredicate);
 		for (var f : filters) {
 			try {
 				var opt = system.filter().filter(context, keyValues, f);

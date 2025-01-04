@@ -232,7 +232,8 @@ These can either be specified in the URI of the resource or as key values within
     </li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_FLAGS}  or {@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_FLAG} 
         - flags for loading</li>
-    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_PARAM} or {@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_PARM}
+    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_PARAM}, {@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_PARM} or
+        {@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_P}
         - parameters for custom plugins
     </li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_FILTER} or {@value io.jstach.ezkv.kvs.KeyValuesResource#KEY_FILT} 
@@ -304,28 +305,33 @@ _load_springJson=env:///SPRING_APPLICATION_JSON?_mediaType=json
 See <a href="#keyvaluesmedia">KeyValuesMedia section</a> for information on how to add more media types.
 
 <h4 id="resource-filters">Resource Filters</h4>
-<p>Filters can be applied to a resource to alter the key values after they are loaded but before being added to the final results. 
+<p>Filters can be applied to a resource to alter the key values after they are loaded and are <em>applied before being parsed
+  for more resources to load</em> and before being added to the final results. 
 The ordering of filters matters, so it is generally recommended to use the URI notation, as the order is guaranteed.</p>
 
 <p>The current filters provided out-of-the-box (OOB) are:</p>
 <ul>
-    <li><code>sed</code> - Similar to the Unix <code>sed</code> utility but only supporting the <code>s</code> (substitute) and <code>d</code> (delete) commands.</li>
-    <li><code>grep</code> - Filters keys matching a regular expression.</li>
-    <li><code>join</code> - Joins duplicate keys (key with same name) using the expression as the join string on the values.</li>
+    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SED} - Similar to the Unix <a href="https://pubs.opengroup.org/onlinepubs/9799919799/utilities/sed.html"><code>sed</code></a> 
+    utility but only supporting the <code>s</code> (substitute) and <code>d</code> (delete) commands.</li>
+    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_GREP}- Filters keys matching a regular expression.</li>
+    <li> {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_JOIN} - Joins duplicate keys (key with same name) using the expression as the join string on the values.</li>
 </ul>
 
 <strong>Filter Target</strong> 
 <p>
 The {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_GREP}
 and {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SED} filters by default target the keys for search and
-manipulation. These filter can target the value by suffixing with {@value #FILTER_TARGET_VALUE}
-or {@link #FILTER_TARGET_VAL}.
+manipulation. These filter can target the value by suffixing with {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_TARGET_VALUE}
+or {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_TARGET_VAL}. You can also explicitly say you want to target the key with 
+{@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_TARGET_KEY} suffix. For example <code>_filt_sed_key=...</code>
+would target keys for search and replace. Note the {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_JOIN} filter
+only operates on values and combines keys so these suffixes do not apply.
 </p>
 
 <p>Here is an example of using grep and sed filters:</p>
 
 {@snippet lang=properties :
-_load_env=env:///?_filter_grep=^MY_APP_&_filter_sed=s/^MY_APP/myapp./
+_load_env=env:///?_filter_grep_key=^MY_APP_&_filter_sed=s/^MY_APP/myapp./
 }
 
 <p>The above configuration will only load environment variables prefixed with <code>MY_APP_</code> and will replace 
@@ -337,6 +343,15 @@ users can still identify where the key-value originally came from.</p>
 <p><strong>Note:</strong> 
     To add new filters, implement {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter}. 
     This interface allows you to provide custom filters.
+</p>
+
+<strong>Retaining Resource Keys</strong>
+<p>
+Filters like sed can often remove the special chain loading keys (the keys by default prefixed with <code>_</code>). In the future
+a special resource load flag will be provided to avoid this but a workaround is to rename
+the keys with one filter and then restore them with a filter that runs last.
+If using the out of box filters the keys can also be retained with the resource parameter of {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SKIP_RESOURCE_KEYS_PARAM}
+but custom filters may not honor it.
 </p>
 
 <h3 id="keyvaluesloader">Resource Loading</h3>

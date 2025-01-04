@@ -3,6 +3,7 @@ package io.jstach.ezkv.kvs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,7 +66,8 @@ class FiltersTest {
 	private KeyValues runFilter(KeyValues kvs, String filterName, String expression) {
 		Filter filter = new Filter(filterName, expression, "blah");
 		var s = KeyValuesSystem.builder().build();
-		FilterContext context = new FilterContext(s.environment(), Parameters.of(Map.of()));
+		Predicate<KeyValue> ignore = kv -> false;
+		FilterContext context = new FilterContext(s.environment(), Parameters.of(Map.of()), ignore);
 		var result = s.filter().filter(context, kvs, filter).orElseThrow();
 		return result;
 	}
