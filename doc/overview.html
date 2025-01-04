@@ -347,10 +347,9 @@ users can still identify where the key-value originally came from.</p>
 
 <strong>Retaining Resource Keys</strong>
 <p>
-Filters like sed can often remove the special chain loading keys (the keys by default prefixed with <code>_</code>). In the future
-a special resource load flag will be provided to avoid this but a workaround is to rename
-the keys with one filter and then restore them with a filter that runs last.
-If using the out of box filters the keys can also be retained with the resource parameter of {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SKIP_RESOURCE_KEYS_PARAM}
+Filters like sed can often remove the special chain loading keys (the keys by default prefixed with <code>_</code>). 
+
+If using the out of box filters the keys can also be retained with the flag of {@value io.jstach.ezkv.kvs.KeyValuesResource#FLAG_NO_FILTER_RESOURCE_KEYS}
 but custom filters may not honor it.
 </p>
 

@@ -294,6 +294,12 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	public static final String FLAG_SENSITIVE = "SENSITIVE";
 
 	/**
+	 * Hints to filters that they should retain and not alter resource keys.
+	 * @see FilterContext#keyValueIgnore()
+	 */
+	public static final String FLAG_NO_FILTER_RESOURCE_KEYS = "NO_FILTER_RESOURCE_KEYS";
+
+	/**
 	 * Specifies that the resource should not be reloaded once it has been loaded.
 	 */
 	public static final String FLAG_NO_RELOAD = "NO_RELOAD";
@@ -496,14 +502,6 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * @see #FILTER_TARGET_VALUE
 	 */
 	public static final String FILTER_TARGET_VAL = "_val";
-
-	/**
-	 * Filters by default interact with resource keys. This custom resource parameter (see
-	 * {@value #KEY_PARAM}) is used by the out of box filters to not apply filter on
-	 * resource keys.
-	 * @see FilterContext#keyValueIgnore()
-	 */
-	public static final String FILTER_SKIP_RESOURCE_KEYS_PARAM = "skip_resource_keys";
 
 	/**
 	 * Returns the URI of the resource.
