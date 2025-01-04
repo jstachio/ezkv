@@ -314,7 +314,15 @@ The ordering of filters matters, so it is generally recommended to use the URI n
     <li><code>join</code> - Joins duplicate keys (key with same name) using the expression as the join string on the values.</li>
 </ul>
 
-<p>Here is an example of using both filters:</p>
+<strong>Filter Target</strong> 
+<p>
+The {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_GREP}
+and {@value io.jstach.ezkv.kvs.KeyValuesResource#FILTER_SED} filters by default target the keys for search and
+manipulation. These filter can target the value by suffixing with {@value #FILTER_TARGET_VALUE}
+or {@link #FILTER_TARGET_VAL}.
+</p>
+
+<p>Here is an example of using grep and sed filters:</p>
 
 {@snippet lang=properties :
 _load_env=env:///?_filter_grep=^MY_APP_&_filter_sed=s/^MY_APP/myapp./
