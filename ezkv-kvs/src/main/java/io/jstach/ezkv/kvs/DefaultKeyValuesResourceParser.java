@@ -83,10 +83,11 @@ enum DefaultKeyValuesResourceParser implements KeyValuesResourceParser {
 
 	@Override
 	public KeyValues filterResources(KeyValues keyValues) {
-		return keyValues.filter(this::filter);
+		return keyValues.filter(this::isResourceKey);
 	}
 
-	private boolean filter(KeyValue kv) {
+	@Override
+	public boolean isResourceKey(KeyValue kv) {
 		try {
 			return resourceKeyOrNull(kv) == null;
 		}

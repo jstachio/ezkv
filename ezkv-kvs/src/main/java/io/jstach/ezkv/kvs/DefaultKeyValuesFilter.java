@@ -19,6 +19,9 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 			Objects.requireNonNull(keyValues);
 			Pattern pattern = Pattern.compile(grep);
 			return keyValues.filter(kv -> {
+				if (context.keyValueIgnore().test(kv)) {
+					return true;
+				}
 				String v = switch (target) {
 					case KEY -> kv.key();
 					case VALUE -> kv.value();
@@ -36,6 +39,9 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 			var command = DefaultSedParser.parse(sed);
 			return switch (target) {
 				case KEY -> keyValues.flatMap(kv -> {
+					if (context.keyValueIgnore().test(kv)) {
+						return KeyValues.of(kv);
+					}
 					String key = command.execute(kv.key());
 					if (key == null) {
 						return KeyValues.empty();
@@ -46,6 +52,9 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 					return KeyValues.of(kv.withKey(key));
 				});
 				case VALUE -> keyValues.flatMap(kv -> {
+					if (context.keyValueIgnore().test(kv)) {
+						return KeyValues.of(kv);
+					}
 					String value = command.execute(kv.value());
 					if (value == null) {
 						return KeyValues.empty();

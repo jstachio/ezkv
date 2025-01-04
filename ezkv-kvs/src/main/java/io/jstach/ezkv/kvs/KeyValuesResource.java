@@ -16,6 +16,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter.Filter;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter.FilterContext;
 import io.jstach.ezkv.kvs.Variables.Parameters;
 
 /**
@@ -495,6 +496,14 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * @see #FILTER_TARGET_VALUE
 	 */
 	public static final String FILTER_TARGET_VAL = "_val";
+
+	/**
+	 * Filters by default interact with resource keys. This custom resource parameter (see
+	 * {@value #KEY_PARAM}) is used by the out of box filters to not apply filter on
+	 * resource keys.
+	 * @see FilterContext#keyValueIgnore()
+	 */
+	public static final String FILTER_SKIP_RESOURCE_KEYS_PARAM = "skip_resource_keys";
 
 	/**
 	 * Returns the URI of the resource.

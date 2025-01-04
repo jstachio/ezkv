@@ -60,6 +60,13 @@ sealed interface KeyValuesResourceParser permits DefaultKeyValuesResourceParser 
 	KeyValues filterResources(KeyValues keyValues);
 
 	/**
+	 * Tests if a key value is a resource key.
+	 * @param kv key value to test
+	 * @return true if it is a resource key.
+	 */
+	boolean isResourceKey(KeyValue kv);
+
+	/**
 	 * Converts a {@link KeyValuesResource} into its key-value representation and applies
 	 * the resulting key-value pairs to a provided consumer. This method effectively
 	 * serializes the resource into a format that would be parsed back into a resource by
