@@ -202,7 +202,7 @@ public sealed interface KeyValuesServiceProvider {
 		 * {@link KeyValuesResource#KEY_PARAM} keys.
 		 * @param keyValueIgnore keys that should be ignored and not filtered if the
 		 * predicate returns <code>true</code>.
-		 * @see KeyValuesResource#FILTER_SKIP_RESOURCE_KEYS_PARAM
+		 * @see KeyValuesResource#FLAG_NO_FILTER_RESOURCE_KEYS
 		 */
 		public record FilterContext(KeyValuesEnvironment environment, Parameters parameters,
 				Predicate<KeyValue> keyValueIgnore) {

@@ -223,7 +223,7 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 				throw e.getCause();
 			}
 			logger.loaded(resource);
-			return filter(resource, kvs, node);
+			return filter(resource, kvs, node, LoadFlag.NO_FILTER_RESOURCE_KEYS.isSet(flags));
 		}
 		catch (KeyValuesMediaException e) {
 			throw new IOException("Resource has media errors. resource: " + describe(node) + ". " + e.getMessage(), e);
@@ -244,13 +244,12 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 
 	}
 
-	KeyValues filter(InternalKeyValuesResource resource, KeyValues keyValues, Node node) throws IOException {
+	KeyValues filter(InternalKeyValuesResource resource, KeyValues keyValues, Node node, boolean skipResourceKeys)
+			throws IOException {
 		var filters = resource.filters();
 		if (filters.isEmpty()) {
 			return keyValues;
 		}
-		boolean skipResourceKeys = Boolean
-			.parseBoolean(resource.parameters().getValue(KeyValuesResource.FILTER_SKIP_RESOURCE_KEYS_PARAM));
 		Predicate<KeyValue> keyValuePredicate = skipResourceKeys ? resourceParser::isResourceKey : kv -> false;
 		FilterContext context = new FilterContext(system.environment(), resource.parameters(), keyValuePredicate);
 		for (var f : filters) {
@@ -320,6 +319,11 @@ enum LoadFlag {
 	 * Will not toString or print out sensitive
 	 */
 	SENSITIVE(KeyValuesResource.FLAG_SENSITIVE),
+
+	/**
+	 * Hints to filter to retain resource keys.
+	 */
+	NO_FILTER_RESOURCE_KEYS(KeyValuesResource.FLAG_NO_FILTER_RESOURCE_KEYS),
 
 	/**
 	 * TODO
