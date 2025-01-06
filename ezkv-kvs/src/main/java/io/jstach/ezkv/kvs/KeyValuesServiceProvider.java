@@ -42,7 +42,7 @@ public sealed interface KeyValuesServiceProvider {
 	 * with the lowest value has the highest priority (analogous to Spring's Ordered
 	 * interface).
 	 * </p>
-	 * Canonical the builtin components start at {@value #BUILTIN_ORDER_START} so if one
+	 * Canonically the builtin components start at {@value #BUILTIN_ORDER_START} so if one
 	 * is looking to override they should use a lower value.
 	 * @return by default {@code 0}
 	 * @see #BUILTIN_ORDER_START
@@ -53,7 +53,7 @@ public sealed interface KeyValuesServiceProvider {
 
 	/**
 	 * The start order of the builtin components. The start order is low enough that all
-	 * the builtin components will be less than {@code 0} on purpose to avoid accidentally
+	 * the builtin components will be less than {@code 0} on purpose to avoid accidental
 	 * override.
 	 */
 	public static int BUILTIN_ORDER_START = -127;
