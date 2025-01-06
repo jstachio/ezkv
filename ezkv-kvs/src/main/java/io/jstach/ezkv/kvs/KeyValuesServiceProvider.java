@@ -35,6 +35,30 @@ import io.jstach.ezkv.kvs.Variables.Parameters;
 public sealed interface KeyValuesServiceProvider {
 
 	/**
+	 * Since the service providers follow a "resolver" or "finder" pattern order of the
+	 * providers matters.
+	 * <p>
+	 * Higher values are interpreted as lower priority. As a consequence, the provider
+	 * with the lowest value has the highest priority (analogous to Spring's Ordered
+	 * interface).
+	 * </p>
+	 * Canonical the builtin components start at {@value #BUILTIN_ORDER_START} so if one
+	 * is looking to override they should use a lower value.
+	 * @return by default {@code 0}
+	 * @see #BUILTIN_ORDER_START
+	 */
+	default int order() {
+		return 0;
+	}
+
+	/**
+	 * The start order of the builtin components. The start order is low enough that all
+	 * the builtin components will be less than {@code 0} on purpose to avoid accidentally
+	 * override.
+	 */
+	public static int BUILTIN_ORDER_START = -127;
+
+	/**
 	 * A service provider interface for finding {@link KeyValuesLoader} implementations
 	 * that can handle specific {@link KeyValuesResource} instances.
 	 */

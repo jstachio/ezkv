@@ -2,6 +2,8 @@ package io.jstach.ezkv.kvs;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -224,8 +226,13 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 			if (environment == null) {
 				environment = new DefaultKeyValuesEnvironment();
 			}
+			/*
+			 * We copy as we are about to use the service loader to add more entries and
+			 * to avoid mutable issues.
+			 */
 			var loadFinders = new ArrayList<>(this.loadFinders);
 			var mediaFinders = new ArrayList<>(this.mediaFinders);
+			var filters = new ArrayList<>(this.filters);
 			var serviceLoader = this.serviceLoader;
 
 			if (serviceLoader != null) {
@@ -241,6 +248,10 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 					}
 				});
 			}
+			Comparator<KeyValuesServiceProvider> cmp = Comparator.comparing(KeyValuesServiceProvider::order);
+			Collections.sort(loadFinders, cmp);
+			Collections.sort(mediaFinders, cmp);
+			Collections.sort(filters, cmp);
 
 			KeyValuesLoaderFinder loadFinder = (context, resource) -> {
 				return loadFinders.stream().flatMap(rl -> rl.findLoader(context, resource).stream()).findFirst();

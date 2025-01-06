@@ -89,6 +89,11 @@ enum DefaultKeyValuesMedia implements KeyValuesMedia, Parser, Formatter {
 	}
 
 	@Override
+	public int order() {
+		return BUILTIN_ORDER_START + ordinal();
+	}
+
+	@Override
 	public String getMediaType() {
 		return mediaType;
 	}

@@ -145,6 +145,11 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 	}
 
 	@Override
+	public int order() {
+		return BUILTIN_ORDER_START + ordinal();
+	}
+
+	@Override
 	public Optional<KeyValuesLoader> findLoader(LoaderContext context, KeyValuesResource resource) {
 		if (!matches(resource, context.environment())) {
 			return Optional.empty();

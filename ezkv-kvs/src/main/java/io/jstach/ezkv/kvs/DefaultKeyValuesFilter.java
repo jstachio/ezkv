@@ -96,6 +96,11 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 	}
 
 	@Override
+	public int order() {
+		return BUILTIN_ORDER_START + ordinal();
+	}
+
+	@Override
 	public Optional<KeyValues> filter(FilterContext context, KeyValues keyValues, Filter filter) {
 		String filterName = filter.filter();
 		Target target;
