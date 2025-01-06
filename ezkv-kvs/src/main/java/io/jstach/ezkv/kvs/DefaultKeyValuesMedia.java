@@ -22,6 +22,7 @@ import org.jspecify.annotations.Nullable;
 import io.jstach.ezkv.kvs.KeyValuesMedia.Formatter;
 import io.jstach.ezkv.kvs.KeyValuesMedia.Parser;
 
+@SuppressWarnings("EnumOrdinal")
 enum DefaultKeyValuesMedia implements KeyValuesMedia, Parser, Formatter {
 
 	PROPERTIES(MEDIA_TYPE_PROPERTIES, FILE_EXT_PROPERTIES) {

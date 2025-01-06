@@ -228,6 +228,7 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 		return new JSON5KeyValuesParser(JSON5KeyValuesParser.defaultOptions, arrayKeyOption, separator, rawNumber);
 	}
 
+	@SuppressWarnings("ImmutableEnumChecker")
 	enum Param implements Variables.Parameter {
 
 		ARRAY(ARRAY_KEY_PARAM, ARRAY_KEY_ALIAS), SEPARATOR(SEPARATOR_PARAM, SEPARATOR_PARAM_ALIAS),

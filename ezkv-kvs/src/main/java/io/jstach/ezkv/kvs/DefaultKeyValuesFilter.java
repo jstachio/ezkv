@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter;
 
+@SuppressWarnings("EnumOrdinal")
 enum DefaultKeyValuesFilter implements KeyValuesFilter {
 
 	GREP(KeyValuesResource.FILTER_GREP) {

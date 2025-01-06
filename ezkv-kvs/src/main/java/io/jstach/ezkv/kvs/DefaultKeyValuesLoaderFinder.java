@@ -22,6 +22,7 @@ import io.jstach.ezkv.kvs.KeyValuesEnvironment.ResourceStreamLoader;
 import io.jstach.ezkv.kvs.KeyValuesMedia.Parser;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder;
 
+@SuppressWarnings("EnumOrdinal")
 enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 
 	CLASSPATH(KeyValuesResource.SCHEMA_CLASSPATH) {
