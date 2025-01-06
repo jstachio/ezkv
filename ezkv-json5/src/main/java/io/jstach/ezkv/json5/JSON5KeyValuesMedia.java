@@ -137,6 +137,8 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 	// @formatter:on
 	public static final String ARRAY_KEY_PARAM = "json5_arraykey";
 
+	private static final String ARRAY_KEY_ALIAS = "json_arraykey";
+
 	/**
 	 * Will output array keys using array notation like <code>a[0]</code> instead of the
 	 * default which is duplicating the keys.
@@ -161,6 +163,8 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 	 * {@value #SEPARATOR_PARAM} and is by default {@value #DEFAULT_SEPARATOR}.
 	 */
 	public static final String SEPARATOR_PARAM = "json5_separator";
+
+	private static final String SEPARATOR_PARAM_ALIAS = "json_separator";
 
 	/**
 	 * The default JSON path separator.
@@ -193,6 +197,8 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 	// @formatter:on
 	public static final String NUMBER_RAW_PARAM = "json5_number_raw";
 
+	private static final String NUMBER_RAW_ALIAS = "json_number_raw";
+
 	/**
 	 * For service loader.
 	 */
@@ -224,17 +230,18 @@ public final class JSON5KeyValuesMedia implements KeyValuesMedia {
 
 	enum Param implements Variables.Parameter {
 
-		ARRAY(ARRAY_KEY_PARAM), SEPARATOR(SEPARATOR_PARAM), NUMBER(NUMBER_RAW_PARAM);
+		ARRAY(ARRAY_KEY_PARAM, ARRAY_KEY_ALIAS), SEPARATOR(SEPARATOR_PARAM, SEPARATOR_PARAM_ALIAS),
+		NUMBER(NUMBER_RAW_PARAM, NUMBER_RAW_ALIAS);
 
-		private final String key;
+		private final List<String> keys;
 
-		private Param(String key) {
-			this.key = key;
+		private Param(String key, String alias) {
+			this.keys = List.of(key, alias);
 		}
 
 		@Override
 		public List<String> keys() {
-			return List.of(key);
+			return this.keys;
 		}
 
 	}
