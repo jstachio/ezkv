@@ -3,11 +3,13 @@ package io.jstach.ezkv.kvs;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesMediaFinder;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder.LoaderContext;
 import io.jstach.ezkv.kvs.Variables.Parameters;
 
@@ -57,6 +59,54 @@ public sealed interface KeyValuesServiceProvider {
 	 * override.
 	 */
 	public static int BUILTIN_ORDER_START = -127;
+
+	/**
+	 * This service provider is for other modules in your application to provide a
+	 * reference configuration to be overriden and can be loaded using the
+	 * {@value KeyValuesResource#SCHEMA_PROVIDER} URI scheme. This is akin to
+	 * <a href="https://github.com/lightbend/config?tab=readme-ov-file#standard-behavior">
+	 * Lightbend/Typesafe Config <code>reference.conf</code></a> but without a resource
+	 * call for maximum portability with things like GraalVM native, and modular
+	 * applications where the config could be an enscapulated resource (properties file)
+	 * which would require the module to do the loading and not EZKV.
+	 * <p>
+	 * If one would like to load configuration from say properties file the implementation
+	 * will have to do that on its own but is free to use the out of box
+	 * {@link KeyValuesMedia} to parse things like properties files.
+	 * <p>
+	 * If using a Java modules it is recommended that the lower modules that are
+	 * contributing config use <code>requires static</code> to the EZKV module to avoid
+	 * unnecessary coupling if all they are doing is just providing reference config.
+	 * <p>
+	 * <strong>NOTE:</strong> It is recommend to avoid making key values that need
+	 * interpolation as the variables may not be present. The idea again is that this
+	 * reference config that needs to be guaranteed to be there for defaults and possibly
+	 * participate in downstream variable/interpolation usage.
+	 *
+	 * @see KeyValuesResource#SCHEMA_PROVIDER
+	 */
+	public non-sealed interface KeyValuesProvider extends KeyValuesServiceProvider {
+
+		/**
+		 * Implementations should use the mutable builder to add key values. The provided
+		 * builder will already be preconfigured based on the {@link #name()} and other
+		 * resource meta data.
+		 * @param builder used to add key values.
+		 */
+		void provide(KeyValues.Builder builder);
+
+		/**
+		 * The name used to identify where the key values are coming from. The name should
+		 * follow {@value KeyValuesResource#RESOURCE_NAME_REGEX} regex and because by
+		 * default the {@link Class#getSimpleName()} is used this method should be
+		 * implemented if your class does not follow that naming regex.
+		 * @return by default {@link Class#getSimpleName()}.
+		 */
+		default String name() {
+			return this.getClass().getSimpleName();
+		}
+
+	}
 
 	/**
 	 * A service provider interface for finding {@link KeyValuesLoader} implementations
@@ -312,9 +362,13 @@ public sealed interface KeyValuesServiceProvider {
 }
 
 record DefaultLoaderContext(KeyValuesEnvironment environment, KeyValuesMediaFinder mediaFinder, Variables variables,
-		KeyValuesResourceParser resourceParser) implements LoaderContext {
+		KeyValuesResourceParser resourceParser, List<? extends KeyValuesProvider> providers) implements LoaderContext {
 	static LoaderContext of(KeyValuesSystem system, Variables variables, KeyValuesResourceParser resourceParser) {
-		return new DefaultLoaderContext(system.environment(), system.mediaFinder(), variables, resourceParser);
+		List<? extends KeyValuesProvider> providers = switch (system) {
+			case DefaultKeyValuesSystem d -> d.providers();
+		};
+		return new DefaultLoaderContext(system.environment(), system.mediaFinder(), variables, resourceParser,
+				providers);
 	}
 
 	@Override

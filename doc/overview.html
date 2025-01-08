@@ -376,6 +376,7 @@ based on the schema of the URI. For example:</p>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CMD} - Command line argument pairs separated by <code>=</code></li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_STDIN} - Allows Unix piping of key values, often useful for passwords</li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_PROFILE} - Will load multiple resources based on a CSV of profiles where the profile name replaces part of the URI</li>
+    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_PROVIDER} - Will load reference config that is usually loaded from the ServiceLoader</li>
 </ul>
 
 
@@ -448,6 +449,45 @@ _flags_profiles2=no_require
 }
 
 <p>This means users can create a similar implementation themselves if desired.</p>
+
+<h4 id="uri-schema-provider">URI schema: <code>provider</code></h4>
+
+The provider schema is a way to load default configuration provided by modules your
+application depends on for example a database layer or service layer. 
+The providers should be registered as ServiceLoader services so that they can be discovered
+however they will not be loaded unless this schema is used.
+<p>
+This is akin to
+<a href="https://github.com/lightbend/config?tab=readme-ov-file#standard-behavior">
+Lightbend/Typesafe Config <code>reference.conf</code></a> but without a resource
+call for maximum portability with things like GraalVM native, and modular applications
+where the config could be an enscapulated resource (properties file) which would
+require the module to do the loading and not EZKV.
+</p>
+
+<strong>Example:</strong>
+
+{@snippet lang=properties :
+# It desirable to load the providers very early if possible
+# as the idea is to have the config replaced with downstream key values
+_load_providers=provider:///
+}
+
+In our database layer we would create a class like:
+
+{@snippet :
+class DatabaseConfigProvider implements KeyValuesServiceProvider.KeyValuesProvider {
+
+	@Override
+	public void provide(KeyValues.Builder builder) {
+		builder.add("database.port", "5245");
+	}
+
+}
+}
+
+And then register it using the {@link java.util.ServiceLoader} registration with
+the service class of {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider}.
 
 <h3 id="keyvaluesmedia">KeyValuesMedia</h3>
 

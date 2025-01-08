@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesMediaFinder;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
 
 /**
  * The main entry point into the Ezkv configuration library. This interface provides
@@ -134,6 +135,8 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 
 		private @Nullable KeyValuesEnvironment environment;
 
+		private List<KeyValuesProvider> providers = new ArrayList<>();
+
 		private List<KeyValuesLoaderFinder> loadFinders = new ArrayList<>(
 				List.of(DefaultKeyValuesLoaderFinder.values()));
 
@@ -189,6 +192,19 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 		}
 
 		/**
+		 * Adds a provider to provide reference key values. It is recommend that you do
+		 * not use this too much as it would create compile coupling with modules that
+		 * maybe should be runtime scope.
+		 * @param provider provider to add.
+		 * @return this
+		 * @see KeyValuesProvider
+		 */
+		public Builder provider(KeyValuesProvider provider) {
+			this.providers.add(provider);
+			return this;
+		}
+
+		/**
 		 * Sets the {@link ServiceLoader} for loading {@link KeyValuesServiceProvider}
 		 * implementations. If this is set, the builder will include any
 		 * {@link KeyValuesLoaderFinder} and {@link KeyValuesMediaFinder} instances found
@@ -233,6 +249,7 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 			var loadFinders = new ArrayList<>(this.loadFinders);
 			var mediaFinders = new ArrayList<>(this.mediaFinders);
 			var filters = new ArrayList<>(this.filters);
+			var providers = new ArrayList<>(this.providers);
 			var serviceLoader = this.serviceLoader;
 
 			if (serviceLoader != null) {
@@ -246,12 +263,16 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 					if (s instanceof KeyValuesFilter f) {
 						filters.add(f);
 					}
+					if (s instanceof KeyValuesProvider p) {
+						providers.add(p);
+					}
 				});
 			}
 			Comparator<KeyValuesServiceProvider> cmp = Comparator.comparing(KeyValuesServiceProvider::order);
 			Collections.sort(loadFinders, cmp);
 			Collections.sort(mediaFinders, cmp);
 			Collections.sort(filters, cmp);
+			Collections.sort(providers, cmp);
 
 			KeyValuesLoaderFinder loadFinder = (context, resource) -> {
 				return loadFinders.stream().flatMap(rl -> rl.findLoader(context, resource).stream()).findFirst();
@@ -259,7 +280,7 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 			KeyValuesMediaFinder mediaFinder = new CompositeMediaFinder(mediaFinders);
 			KeyValuesFilter filter = new CompositeKeyValuesFilter(filters);
 
-			var kvs = new DefaultKeyValuesSystem(environment, loadFinder, mediaFinder, filter);
+			var kvs = new DefaultKeyValuesSystem(environment, loadFinder, mediaFinder, filter, providers);
 			kvs.environment().getLogger().init(kvs);
 			return kvs;
 		}
@@ -317,5 +338,10 @@ record CompositeMediaFinder(List<KeyValuesMediaFinder> finders) implements KeyVa
  * A default implementation of {@link KeyValuesSystem}.
  */
 record DefaultKeyValuesSystem(KeyValuesEnvironment environment, KeyValuesLoaderFinder loaderFinder,
-		KeyValuesMediaFinder mediaFinder, KeyValuesFilter filter) implements KeyValuesSystem {
+		KeyValuesMediaFinder mediaFinder, KeyValuesFilter filter,
+		List<KeyValuesProvider> providers) implements KeyValuesSystem {
+
+	DefaultKeyValuesSystem {
+		providers = List.copyOf(providers);
+	}
 }
