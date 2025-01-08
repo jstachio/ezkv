@@ -8,9 +8,11 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -25,6 +27,54 @@ import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder;
 @SuppressWarnings("EnumOrdinal")
 enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 
+	PROVIDER(KeyValuesResource.SCHEMA_PROVIDER) {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			List<? extends KeyValuesProvider> providers = switch (context) {
+				case DefaultLoaderContext d -> d.providers();
+			};
+			if (providers.isEmpty()) {
+				throw new FileNotFoundException("No providers found");
+			}
+			/*
+			 * Providers have names so we use the path to pick a provider or if blank load
+			 * them all up.
+			 */
+			String path = normalizePath(resource.uri()).trim();
+			if (path.isBlank()) {
+				/*
+				 * Ok so what we are doing here is creating resource key values to load
+				 * the providers just like how profiles work.
+				 */
+				List<KeyValuesResource> childResources = new ArrayList<>();
+				int i = 0;
+				for (var p : providers) {
+					String name = Objects.requireNonNull(p.name());
+					// We change the name and the URI but retain other
+					// resource config (inherited).
+					var builder = resource.toBuilder();
+					URI uri = URI.create(this.schema + ":///" + name);
+					builder.name(name + i);
+					builder.uri(uri);
+					childResources.add(builder.build());
+				}
+				/*
+				 * This will create the resources we want to load as key values to
+				 * delegate to the key values system to load. This is so we capture
+				 * logging and what not.
+				 */
+				return childResources(context, resource, childResources);
+			}
+			var provider = providers.stream()
+				.filter(p -> path.equals(p.name()))
+				.findFirst()
+				.orElseThrow(() -> new FileNotFoundException("Provider not found. name='" + path + "'"));
+			var builder = KeyValues.builder(resource);
+			provider.provide(builder);
+			return builder.build();
+
+		}
+	},
 	CLASSPATH(KeyValuesResource.SCHEMA_CLASSPATH) {
 		@Override
 		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
@@ -205,10 +255,8 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		List<String> profiles = Stream.of(profile.split(",")).filter(p -> !p.isBlank()).distinct().toList();
 
 		logger.info("Found profiles: " + profiles);
-		KeyValues.Builder builder = KeyValues.builder(resource);
 
-		BiConsumer<String, String> consumer = builder::add;
-
+		List<KeyValuesResource> childResources = new ArrayList<>();
 		int i = 0;
 		for (var p : profiles) {
 			var value = uriString.replace("__PROFILE__", p);
@@ -216,7 +264,24 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 			b.uri(URI.create(value));
 			b.name(resource.name() + i++);
 			var profileResource = b.build();
-			context.formatResource(profileResource, consumer);
+			childResources.add(profileResource);
+		}
+		var kvs = childResources(context, resource, childResources);
+		return kvs;
+	}
+
+	// TODO this is cool but also kind of hack
+	// relying on the chain loading.
+	private static KeyValues childResources(LoaderContext context, KeyValuesResource resource,
+			List<KeyValuesResource> childResources) {
+		/*
+		 * This will create the resources we want to load as key values to delegate to the
+		 * key values system to load. This is so we capture logging and what not.
+		 */
+		KeyValues.Builder builder = KeyValues.builder(resource);
+		BiConsumer<String, String> consumer = builder::add;
+		for (var r : childResources) {
+			context.formatResource(r, consumer);
 		}
 		var kvs = builder.build();
 		return kvs;

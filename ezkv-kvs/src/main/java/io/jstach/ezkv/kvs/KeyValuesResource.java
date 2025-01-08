@@ -44,6 +44,10 @@ import io.jstach.ezkv.kvs.Variables.Parameters;
  * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_PROFILE} - Will load multiple
  * resources based on a CSV of profiles where the profile name replaces part of the
  * URI</li>
+ * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_PROVIDER} - Will load reference
+ * key values provided from other modules/layers and is way for other modules/layers to
+ * share default configuration. See {@link KeyValuesServiceProvider.KeyValuesProvider}.
+ * </li>
  * </ul>
  *
  * <h2>Resource Keys</h2>
@@ -397,6 +401,27 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 */
 	// @formatter:on
 	public static final String SCHEMA_CLASSPATH = "classpath";
+
+	// @formatter:off
+	/**
+	 * Will load provider(s) reference key values.
+	 *
+	 * {@snippet lang=properties :
+	 * # load all providers registered
+	 * _load_providers=provider:///
+	 * # or load a specific provider from another module
+	 * _load_provider_db=provider:///RepositoryLayerKeyValuesProvider
+	 * }
+	 *
+	 * It is recommend that you do enable the service loader
+	 * with {@link KeyValuesSystem.Builder#useServiceLoader()}
+	 * and that you use this resource schema very early so
+	 * that downstream key values can override it.
+	 *
+	 * @see KeyValuesServiceProvider.KeyValuesProvider
+	 */
+	// @formatter:on
+	public static final String SCHEMA_PROVIDER = "provider";
 
 	// @formatter:off
 	/**

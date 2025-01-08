@@ -17,10 +17,20 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import io.jstach.ezkv.kvs.KeyValuesEnvironment.Logger;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
 
 class KeyValuesSystemTest {
 
 	static PrintStream out = Objects.requireNonNull(System.out);
+
+	record MyProvider() implements KeyValuesProvider {
+
+		@Override
+		public void provide(KeyValues.Builder builder) {
+			builder.add("ref1", "refValue");
+		}
+
+	}
 
 	/*
 	 * Yes it is ridiculous how this is all one test at the moment. It is essentially a
@@ -74,8 +84,10 @@ class KeyValuesSystemTest {
 		@SuppressWarnings("null")
 		var kvs = KeyValuesSystem.builder()
 			.environment(environment)
+			.provider(new MyProvider()) //
 			.build() //
 			.loader() //
+			.add("provider:///")
 			.add(system)
 			.add("classpath:/test-props/testLoader.properties")
 			.add("extra", KeyValues.builder().add(map.entrySet()).build())
@@ -86,6 +98,7 @@ class KeyValuesSystemTest {
 			String actual = kvs.toString();
 			String expected = """
 					KeyValues[
+					ref1=refValue
 					stuff=/home/kenny
 					blah=/home/kenny
 					message=/home/kenny hello
@@ -104,6 +117,7 @@ class KeyValuesSystemTest {
 		{
 			String actual = KeyValuesMedia.ofProperties().formatter().format(kvs);
 			String expected = """
+					ref1=refValue
 					stuff=/home/kenny
 					blah=/home/kenny
 					message=/home/kenny hello
@@ -127,6 +141,7 @@ class KeyValuesSystemTest {
 
 			String actual = formatter.format(kvs);
 			String expected = """
+					KeyValue[key='ref1', raw='refValue', expanded='refValue', source=Source[uri=provider:///MyProvider, reference=[key='_load_MyProvider0', in='provider:///'], index=1]]
 					KeyValue[key='stuff', raw='${user.home}', expanded='/home/kenny', source=Source[uri=classpath:/test-props/testLoader.properties, index=1]]
 					KeyValue[key='blah', raw='${MISSING:-${stuff}}', expanded='/home/kenny', source=Source[uri=classpath:/test-props/testLoader.properties, index=2]]
 					KeyValue[key='message', raw='${stuff} hello', expanded='/home/kenny hello', source=Source[uri=classpath:/test-props/testLoader-child.properties, reference=[key='_load_child', in='classpath:/test-props/testLoader.properties'], index=1]]
@@ -145,6 +160,10 @@ class KeyValuesSystemTest {
 
 			String actual = logger.toString();
 			String expected = """
+					[DEBUG] Loading uri='provider:///'
+					[INFO ] Loaded  uri='provider:///'
+					[DEBUG] Loading uri='provider:///MyProvider' specified with key: '_load_MyProvider0' in uri='provider:///'
+					[INFO ] Loaded  uri='provider:///MyProvider'
 					[DEBUG] Loading uri='system:///' flags=[NO_ADD, NO_INTERPOLATE]
 					[INFO ] Loaded  uri='system:///' flags=[NO_ADD, NO_INTERPOLATE]
 					[DEBUG] Loading uri='classpath:/test-props/testLoader.properties'
