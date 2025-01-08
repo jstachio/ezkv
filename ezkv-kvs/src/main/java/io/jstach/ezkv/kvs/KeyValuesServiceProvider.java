@@ -79,10 +79,28 @@ public sealed interface KeyValuesServiceProvider {
 	 * unnecessary coupling if all they are doing is just providing reference config.
 	 * <p>
 	 * <strong>NOTE:</strong> It is recommend to avoid making key values that need
-	 * interpolation as the variables may not be present. The idea again is that this
-	 * reference config that needs to be guaranteed to be there for defaults and possibly
-	 * participate in downstream variable/interpolation usage.
+	 * interpolation from external variables as the variables may not be present. However
+	 * interpolation based on the local keys being added is fine and encouraged (for
+	 * example constructing a JDBC URL from a default port that is also provided). The
+	 * idea again is that this reference config that needs to be guaranteed to be there
+	 * for defaults and possibly participate in downstream variable/interpolation usage.
 	 *
+	 * <strong>Example</strong>
+	 * {@snippet :
+	 * class DatabaseConfigProvider implements KeyValuesServiceProvider.KeyValuesProvider {
+	 *
+	 * 	public void provide(KeyValues.Builder builder) {
+	 * 		builder.add("database.host", "localhost");
+	 * 		builder.add("database.port", "5245");
+	 * 		builder.add("database.schema", "mydb");
+	 * 		builder.add("database.url", "jdbc:postgresql://${database.host}/${database.port}/${database.schema}");
+	 * 	}
+	 *
+	 * }
+	 * }
+	 * 
+	 * Down stream <code>database.port</code> could be overriden.
+	 * 
 	 * @see KeyValuesResource#SCHEMA_PROVIDER
 	 */
 	public non-sealed interface KeyValuesProvider extends KeyValuesServiceProvider {
