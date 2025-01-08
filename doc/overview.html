@@ -452,7 +452,7 @@ _flags_profiles2=no_require
 
 <h4 id="uri-schema-provider">URI schema: <code>provider</code></h4>
 
-The provider schema is a way to load default configuration provided by modules your
+The {@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_PROVIDER} schema is a way to load default configuration provided by modules your
 application depends on for example a database layer or service layer. 
 The providers should be registered as ServiceLoader services so that they can be discovered
 however they will not be loaded unless this schema is used.
