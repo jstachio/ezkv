@@ -41,8 +41,10 @@ and some prefix removed.
 * **[Latest SNAPSHOT Ezkv doc](https://jstach.io/ezkv/)**
 * **[Current released Ezkv doc](https://jstach.io/doc/ezkv/current/apidocs)**
 
-**While this readme does contain some documentation the above is the preferred documentation and
-more likely to be correct!**
+> [!WARNING]
+> While this readme does contain some documentation the above is the preferred documentation and 
+more likely to be up to date and correct!
+> It is very likely the below documentation is not correct is only provided for indexing.
 
 ## Why and Use Case
 
