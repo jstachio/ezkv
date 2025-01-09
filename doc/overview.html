@@ -355,9 +355,24 @@ but custom filters may not honor it.
 
 <h3 id="keyvaluesloader">Resource Loading</h3>
 
-<p>A {@link io.jstach.ezkv.kvs.KeyValuesLoader} usually takes a {@link io.jstach.ezkv.kvs.KeyValuesResource} and turns it into {@link io.jstach.ezkv.kvs.KeyValues}.</p>
+<p>The main {@link io.jstach.ezkv.kvs.KeyValuesLoader}  provided by the KeyValuesSystem will take 
+ {@linkplain io.jstach.ezkv.kvs.KeyValuesResource KeyValuesResources } and essentially concatenate all the found {@link io.jstach.ezkv.kvs.KeyValues}
+ into one KeyValues.
+ The loader will parse for other other resources and load them in a <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth first fashion</a> 
+ based on the order of the load keys found. For example if we have.
 
-<p>It is an {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder extension point} that, in simple terms, takes a URI and loads {@link io.jstach.ezkv.kvs.KeyValues}, usually 
+{@snippet lang = properties :
+_load_A=...
+_load_B=...
+}
+
+Resource <code>A</code> and its children will be loaded before resource <code>B</code> and its children. Effectively
+that means that A and its children's key values will appear before resource <code>B</code> (and its children's) key values in the {@link io.jstach.ezkv.kvs.KeyValues} stream.
+The idea is that if <code>B</code> has the same keys as <code>A</code> <code>B</code> will override <code>A</code> on a  {@link io.jstach.ezkv.kvs.KeyValues#toMap()}.
+
+</p>
+
+<p>EZKV provides an {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder extension point} that, in simple terms, takes a URI and loads {@link io.jstach.ezkv.kvs.KeyValues}, usually 
 based on the schema of the URI. For example:</p>
 <ul>
     <li><code>classpath</code> - Uses the JDK classloader mechanism.</li>
