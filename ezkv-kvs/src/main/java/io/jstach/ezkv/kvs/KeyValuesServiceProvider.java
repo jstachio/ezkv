@@ -66,9 +66,9 @@ public sealed interface KeyValuesServiceProvider {
 	 * {@value KeyValuesResource#SCHEMA_PROVIDER} URI scheme. This is akin to
 	 * <a href="https://github.com/lightbend/config?tab=readme-ov-file#standard-behavior">
 	 * Lightbend/Typesafe Config <code>reference.conf</code></a> but without a resource
-	 * call for maximum portability with things like GraalVM native, and modular
-	 * applications where the config could be an enscapulated resource (properties file)
-	 * which would require the module to do the loading and not EZKV.
+	 * call for maximum portability with things like GraalVM native, Maven shade plugin,
+	 * and modular applications where the config could be an enscapulated resource
+	 * (properties file) which would require the module to do the loading and not EZKV.
 	 * <p>
 	 * If one would like to load configuration from say properties file the implementation
 	 * will have to do that on its own but is free to use the out of box
@@ -84,12 +84,17 @@ public sealed interface KeyValuesServiceProvider {
 	 * example constructing a JDBC URL from a default port that is also provided). The
 	 * idea again is that this reference config that needs to be guaranteed to be there
 	 * for defaults and possibly participate in downstream variable/interpolation usage.
+	 * <strong> It is highly recommended that you do not initialize other parts of the
+	 * module that would initialize logging or something that needs configuration!
+	 * </strong> If you need to use logging use the EZKV logging:
+	 * {@link KeyValuesEnvironment#getLogger()} which will by default not initialize a
+	 * logging framework.
 	 *
 	 * <strong>Example</strong>
 	 * {@snippet :
-	 * class DatabaseConfigProvider implements KeyValuesServiceProvider.KeyValuesProvider {
+	 * public class DatabaseConfigProvider implements KeyValuesServiceProvider.KeyValuesProvider {
 	 *
-	 * 	public void provide(KeyValues.Builder builder) {
+	 * 	public void provide(KeyValues.Builder builder, LoaderContext context) {
 	 * 		builder.add("database.host", "localhost");
 	 * 		builder.add("database.port", "5245");
 	 * 		builder.add("database.schema", "mydb");
@@ -98,20 +103,60 @@ public sealed interface KeyValuesServiceProvider {
 	 *
 	 * }
 	 * }
-	 * 
+	 *
 	 * Down stream <code>database.port</code> could be overriden.
-	 * 
+	 * <p>
+	 * Another common usage is some module has an {@link Enum} of configuration options.
+	 * This extension point allows you to fill configuration programmatically so you can
+	 * loop through the enum instances and add the default properties.
+	 *
+	 * {@snippet :
+	 * public class ContextPathProvider implements KeyValuesServiceProvider.KeyValuesProvider {
+	 * 	public enum ContextPath { // for example purposes this an inner class
+	 * 		ACCOUNT("/account"), PROFILE("/profile");
+	 *
+	 * 		final String path;
+	 *
+	 * 		ContextPath(String path) {
+	 * 			this.path = path;
+	 * 		}
+	 * 	}
+	 *
+	 * 	public void provide(KeyValues.Builder builder, LoaderContext context) {
+	 * 		for (ContextPath p : ContextPath.values()) {
+	 * 			builder.add("contextpath." + p.name().toLowerCase(), p.path);
+	 * 		}
+	 * 	}
+	 * }
+	 * }
+	 *
+	 * Note that providers can make {@link KeyValuesResource#KEY_LOAD} keys to load other
+	 * resources if they really would like to have resources loaded.
+	 *
 	 * @see KeyValuesResource#SCHEMA_PROVIDER
 	 */
 	public non-sealed interface KeyValuesProvider extends KeyValuesServiceProvider {
+
+		// TODO maybe should make another Context class for this
 
 		/**
 		 * Implementations should use the mutable builder to add key values. The provided
 		 * builder will already be preconfigured based on the {@link #name()} and other
 		 * resource meta data.
+		 * <p>
+		 * <strong> It is highly recommended that you do not initialize to many things in
+		 * this call that would initialize logging or something that needs configuration!
+		 * </strong>
+		 * <p>
+		 * If you need to use logging use the EZKV logging:
+		 * {@link KeyValuesEnvironment#getLogger()} which will by default not initialize a
+		 * logging framework.
 		 * @param builder used to add key values.
+		 * @param context current load context should be used mainly to use
+		 * {@link KeyValuesEnvironment#getLogger()} and to help parse literal strings that
+		 * are properties.
 		 */
-		void provide(KeyValues.Builder builder);
+		void provide(KeyValues.Builder builder, LoaderContext context);
 
 		/**
 		 * The name used to identify where the key values are coming from. The name should

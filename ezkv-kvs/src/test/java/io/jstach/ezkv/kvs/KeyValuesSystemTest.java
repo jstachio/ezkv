@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import io.jstach.ezkv.kvs.KeyValuesEnvironment.Logger;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder.LoaderContext;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
 
 class KeyValuesSystemTest {
@@ -26,7 +27,7 @@ class KeyValuesSystemTest {
 	record MyProvider() implements KeyValuesProvider {
 
 		@Override
-		public void provide(KeyValues.Builder builder) {
+		public void provide(KeyValues.Builder builder, LoaderContext context) {
 			builder.add("ref1", "refValue");
 		}
 
