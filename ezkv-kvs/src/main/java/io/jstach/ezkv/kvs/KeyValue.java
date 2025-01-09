@@ -381,8 +381,8 @@ public record KeyValue(String key, String expanded, Meta meta) {
 
 		/**
 		 * Marks the key-value as containing sensitive information. When this flag is set,
-		 * the value may be redacted when displayed to avoid leaking secrets.
-		 * <strong>It also means it cannot be used for interpolation!</strong>
+		 * the value may be redacted when displayed to avoid leaking secrets. <strong>It
+		 * also means it cannot be used for interpolation!</strong>
 		 */
 		SENSITIVE;
 
@@ -412,8 +412,8 @@ public record KeyValue(String key, String expanded, Meta meta) {
 	/**
 	 * Checks if the {@link Flag#SENSITIVE} flag is set on this {@code KeyValue}. A
 	 * sensitive value is marked to indicate that it should be treated as confidential and
-	 * may be redacted when displayed to prevent leaking sensitive information.
-	 * <strong>It also means it cannot be used for interpolation!</strong>
+	 * may be redacted when displayed to prevent leaking sensitive information. <strong>It
+	 * also means it cannot be used for interpolation!</strong>
 	 * @return {@code true} if the {@code SENSITIVE} flag is set, otherwise {@code false}.
 	 */
 	public boolean isSensitive() {

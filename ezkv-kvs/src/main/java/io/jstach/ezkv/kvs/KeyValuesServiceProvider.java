@@ -328,9 +328,9 @@ public sealed interface KeyValuesServiceProvider {
 	 * </p>
 	 */
 	public non-sealed interface KeyValuesFilter extends KeyValuesServiceProvider {
-		
-		//TODO maybe the filter context should have the currently loaded key values so
-		//far
+
+		// TODO maybe the filter context should have the currently loaded key values so
+		// far
 
 		/**
 		 * Provides contextual information to a filter, including the environment and any
@@ -369,7 +369,8 @@ public sealed interface KeyValuesServiceProvider {
 		 * wants to return an empty key values it should return an Optional of empty key
 		 * values and not {@link Optional#empty()}.
 		 * @param context the filter context providing the environment and parameters
-		 * @param keyValues the key-value pairs loaded by the current resource to be filtered
+		 * @param keyValues the key-value pairs loaded by the current resource to be
+		 * filtered
 		 * @param filter filter description
 		 * @return an optional {@link KeyValues} instance with the filtered key-value
 		 * pairs

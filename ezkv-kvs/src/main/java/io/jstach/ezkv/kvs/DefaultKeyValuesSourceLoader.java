@@ -301,11 +301,6 @@ enum LoadFlag {
 	NO_ADD(KeyValuesResource.FLAG_NO_ADD), // DONE
 
 	/**
-	 * Will add key values but are not allowed for interpolation.
-	 */
-	NO_ADD_VARIABLES(KeyValuesResource.FLAG_NO_ADD_VARIABLES),
-
-	/**
 	 * Disables _load calls on child.
 	 */
 	NO_LOAD_CHILDREN(KeyValuesResource.FLAG_NO_LOAD_CHILDREN),

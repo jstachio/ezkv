@@ -275,12 +275,6 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	public static final String FLAG_NO_ADD = "NO_ADD";
 
 	/**
-	 * Indicates that key-value pairs added to variables should not be used for
-	 * interpolation purposes.
-	 */
-	public static final String FLAG_NO_ADD_VARIABLES = "NO_ADD_VARIABLES";
-
-	/**
 	 * Prevents the resource from invoking <code>_load</code> calls to load additional
 	 * child resources.
 	 */
