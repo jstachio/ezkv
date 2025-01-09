@@ -182,6 +182,10 @@ class KeyValuesSystemTest {
 					[INFO ] Loaded  uri='classpath:/test-props/testLoader-filter.properties'
 					[DEBUG] Loading uri='classpath:/test-props/testLoader-doesnotexist.properties' flags=[NO_REQUIRE] specified with key: '_load_noexist' in uri='classpath:/test-props/testLoader.properties'
 					[DEBUG] Missing uri='classpath:/test-props/testLoader-doesnotexist.properties' flags=[NO_REQUIRE]
+					[DEBUG] Loading uri='classpath:/test-props/testLoader-childwarn.properties' flags=[NO_LOAD_CHILDREN] specified with key: '_load_childwarn' in uri='classpath:/test-props/testLoader.properties'
+					[INFO ] Loaded  uri='classpath:/test-props/testLoader-childwarn.properties' flags=[NO_LOAD_CHILDREN]
+					[WARN ] Resource is not allowed to load children but had load keys (ignoring). resource: uri='classpath:/test-props/testLoader-childwarn.properties' flags=[NO_LOAD_CHILDREN]
+						<-- specified with key: '_load_childwarn' in uri='classpath:/test-props/testLoader.properties'
 					[DEBUG] Loading uri='classpath:/test-props/testLoader-sensitive.properties' flags=[SENSITIVE] specified with key: '_load_luggage' in uri='classpath:/test-props/testLoader.properties'
 					[INFO ] Loaded  uri='classpath:/test-props/testLoader-sensitive.properties' flags=[SENSITIVE]
 					""";

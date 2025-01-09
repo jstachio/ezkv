@@ -121,6 +121,11 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 				kvs = kvs.expand(variables);
 			}
 			List<? extends InternalKeyValuesResource> foundResources = parseResources(kvs, node);
+			if (LoadFlag.NO_LOAD_CHILDREN.isSet(flags) && !foundResources.isEmpty()) {
+				foundResources = List.of();
+				logger.warn("Resource is not allowed to load children but had load keys (ignoring). resource: "
+						+ describe(node));
+			}
 			var nodes = foundResources.stream().map(s -> new Node(s, node)).toList();
 			validateNames(nodes);
 			// push
@@ -207,9 +212,6 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 			throw new IllegalStateException("bug");
 		}
 		logger.load(resource);
-		if (LoadFlag.NO_LOAD_CHILDREN.isSet(flags)) {
-			throw new IOException("Resource not allowed to chain. resource: " + describe(node));
-		}
 		var context = DefaultLoaderContext.of(system, variables, resourceParser);
 		try {
 			KeyValues kvs;
@@ -298,7 +300,7 @@ enum LoadFlag {
 	/**
 	 * Will add the kvs to variables but not to the final resolved key values.
 	 */
-	NO_ADD(KeyValuesResource.FLAG_NO_ADD), // DONE
+	NO_ADD(KeyValuesResource.FLAG_NO_ADD), // Done
 
 	/**
 	 * Disables _load calls on child.
@@ -318,7 +320,7 @@ enum LoadFlag {
 	/**
 	 * Hints to filter to retain resource keys.
 	 */
-	NO_FILTER_RESOURCE_KEYS(KeyValuesResource.FLAG_NO_FILTER_RESOURCE_KEYS),
+	NO_FILTER_RESOURCE_KEYS(KeyValuesResource.FLAG_NO_FILTER_RESOURCE_KEYS), // Done
 
 	/**
 	 * TODO
