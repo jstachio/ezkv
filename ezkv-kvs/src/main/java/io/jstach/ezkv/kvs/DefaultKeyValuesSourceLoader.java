@@ -288,17 +288,17 @@ enum LoadFlag {
 	 * Confusing but this means the resource should not have its properties overriden. Not
 	 * to be confused with {@link #NO_REPLACE} which sounds like what this does.
 	 */
-	LOCK(KeyValuesResource.FLAG_LOCK),
+	LOCK(KeyValuesResource.FLAG_LOCK), // TODO maybe?
 
 	/**
 	 * This basically says the resource can only add new key values.
 	 */
-	NO_REPLACE(KeyValuesResource.FLAG_NO_REPLACE),
+	NO_REPLACE(KeyValuesResource.FLAG_NO_REPLACE), // TODO filter could do this
 
 	/**
 	 * Will add the kvs to variables but not to the final resolved key values.
 	 */
-	NO_ADD(KeyValuesResource.FLAG_NO_ADD),
+	NO_ADD(KeyValuesResource.FLAG_NO_ADD), // DONE
 
 	/**
 	 * Will add key values but are not allowed for interpolation.

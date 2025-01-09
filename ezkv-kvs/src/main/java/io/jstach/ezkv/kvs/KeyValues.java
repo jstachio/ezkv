@@ -527,7 +527,7 @@ class KeyValuesInterpolator {
 			KeyValue last = flat.remove(kv.key());
 			String v = kv.raw();
 			String value;
-			if (kv.isNoInterpolation()) {
+			if (kv.isNoInterpolation() || kv.isSensitive()) {
 				value = v;
 			}
 			else {
