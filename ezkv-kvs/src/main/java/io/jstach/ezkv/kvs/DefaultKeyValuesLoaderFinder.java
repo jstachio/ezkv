@@ -70,7 +70,10 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 				.findFirst()
 				.orElseThrow(() -> new FileNotFoundException("Provider not found. name='" + path + "'"));
 			var builder = KeyValues.builder(resource);
-			provider.provide(builder, context);
+			var providerContext = switch (context) {
+				case DefaultLoaderContext ctx -> ctx;
+			};
+			provider.provide(providerContext, builder);
 			return builder.build();
 
 		}

@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesMediaFinder;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
+import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider.ProviderContext;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder.LoaderContext;
 import io.jstach.ezkv.kvs.Variables.Parameters;
 
@@ -137,7 +138,13 @@ public sealed interface KeyValuesServiceProvider {
 	 */
 	public non-sealed interface KeyValuesProvider extends KeyValuesServiceProvider {
 
-		// TODO maybe should make another Context class for this
+		/**
+		 * A context provided to {@link KeyValuesProvider} implementations to supply
+		 * necessary dependencies and services.
+		 */
+		public sealed interface ProviderContext extends LoaderContext {
+
+		}
 
 		/**
 		 * Implementations should use the mutable builder to add key values. The provided
@@ -151,12 +158,12 @@ public sealed interface KeyValuesServiceProvider {
 		 * If you need to use logging use the EZKV logging:
 		 * {@link KeyValuesEnvironment#getLogger()} which will by default not initialize a
 		 * logging framework.
-		 * @param builder used to add key values.
 		 * @param context current load context should be used mainly to use
 		 * {@link KeyValuesEnvironment#getLogger()} and to help parse literal strings that
 		 * are properties.
+		 * @param builder used to add key values.
 		 */
-		void provide(KeyValues.Builder builder, LoaderContext context);
+		void provide(ProviderContext context, KeyValues.Builder builder);
 
 		/**
 		 * The name used to identify where the key values are coming from. The name should
@@ -181,60 +188,7 @@ public sealed interface KeyValuesServiceProvider {
 		 * A context provided to {@link KeyValuesLoaderFinder} implementations to supply
 		 * necessary dependencies and services for creating a {@link KeyValuesLoader}.
 		 */
-		public sealed interface LoaderContext {
-
-			/**
-			 * Retrieves the {@link KeyValuesEnvironment} for accessing system-level
-			 * resources and properties.
-			 * @return the environment instance
-			 */
-			KeyValuesEnvironment environment();
-
-			/**
-			 * Retrieves the {@link KeyValuesMediaFinder} for finding media types.
-			 * @return the media finder instance
-			 */
-			KeyValuesMediaFinder mediaFinder();
-
-			/**
-			 * Retrieves the {@link Variables} used for interpolation.
-			 * @return the variables instance
-			 */
-			Variables variables();
-
-			/**
-			 * Finds and returns a required parser for the specified
-			 * {@link KeyValuesResource}. Throws an exception if no parser is found.
-			 * @param resource the resource for which to find a parser
-			 * @return the parser for the resource
-			 * @throws KeyValuesMediaException if no parser is found for the resource's
-			 * media type
-			 */
-			default KeyValuesMedia.Parser requireParser(KeyValuesResource resource) throws KeyValuesMediaException {
-				var media = mediaFinder() //
-					.findByResource(resource) //
-					.orElseThrow(() -> new KeyValuesMediaException("Media Type not found. resource: " + resource));
-				return new SafeParser(media.parser(resource.parameters()), media.getMediaType());
-			}
-
-			/**
-			 * Formats a {@link KeyValuesResource} into its key-value representation and
-			 * applies it to a given consumer. This method allows serializing the resource
-			 * into key-value pairs.
-			 * @param resource the resource to format
-			 * @param consumer the consumer to apply the formatted key-value pairs
-			 */
-			void formatResource(KeyValuesResource resource, BiConsumer<String, String> consumer);
-
-			/**
-			 * Formats a resource parameter key how it is represented as key in the parsed
-			 * resource.
-			 * @param resource resource to base the full parameter name on.
-			 * @param parameterName the short parameter from
-			 * {@link KeyValuesResource#parameters()}.
-			 * @return FQ parameter name.
-			 */
-			String formatParameterKey(KeyValuesResource resource, String parameterName);
+		public sealed interface LoaderContext extends Context {
 
 		}
 
@@ -428,8 +382,69 @@ public sealed interface KeyValuesServiceProvider {
 
 }
 
+/**
+ * A context provided to {@link KeyValuesLoaderFinder} implementations to supply necessary
+ * dependencies and services for creating a {@link KeyValuesLoader}.
+ */
+sealed interface Context {
+
+	/**
+	 * Retrieves the {@link KeyValuesEnvironment} for accessing system-level resources and
+	 * properties.
+	 * @return the environment instance
+	 */
+	KeyValuesEnvironment environment();
+
+	/**
+	 * Retrieves the {@link KeyValuesMediaFinder} for finding media types.
+	 * @return the media finder instance
+	 */
+	KeyValuesMediaFinder mediaFinder();
+
+	/**
+	 * Retrieves the {@link Variables} used for interpolation.
+	 * @return the variables instance
+	 */
+	Variables variables();
+
+	/**
+	 * Finds and returns a required parser for the specified {@link KeyValuesResource}.
+	 * Throws an exception if no parser is found.
+	 * @param resource the resource for which to find a parser
+	 * @return the parser for the resource
+	 * @throws KeyValuesMediaException if no parser is found for the resource's media type
+	 */
+	default KeyValuesMedia.Parser requireParser(KeyValuesResource resource) throws KeyValuesMediaException {
+		var media = mediaFinder() //
+			.findByResource(resource) //
+			.orElseThrow(() -> new KeyValuesMediaException("Media Type not found. resource: " + resource));
+		return new SafeParser(media.parser(resource.parameters()), media.getMediaType());
+	}
+
+	/**
+	 * Formats a {@link KeyValuesResource} into its key-value representation and applies
+	 * it to a given consumer. This method allows serializing the resource into key-value
+	 * pairs.
+	 * @param resource the resource to format
+	 * @param consumer the consumer to apply the formatted key-value pairs
+	 */
+	void formatResource(KeyValuesResource resource, BiConsumer<String, String> consumer);
+
+	/**
+	 * Formats a resource parameter key how it is represented as key in the parsed
+	 * resource.
+	 * @param resource resource to base the full parameter name on.
+	 * @param parameterName the short parameter from
+	 * {@link KeyValuesResource#parameters()}.
+	 * @return FQ parameter name.
+	 */
+	String formatParameterKey(KeyValuesResource resource, String parameterName);
+
+}
+
 record DefaultLoaderContext(KeyValuesEnvironment environment, KeyValuesMediaFinder mediaFinder, Variables variables,
-		KeyValuesResourceParser resourceParser, List<? extends KeyValuesProvider> providers) implements LoaderContext {
+		KeyValuesResourceParser resourceParser,
+		List<? extends KeyValuesProvider> providers) implements LoaderContext, ProviderContext {
 	static LoaderContext of(KeyValuesSystem system, Variables variables, KeyValuesResourceParser resourceParser) {
 		List<? extends KeyValuesProvider> providers = switch (system) {
 			case DefaultKeyValuesSystem d -> d.providers();
