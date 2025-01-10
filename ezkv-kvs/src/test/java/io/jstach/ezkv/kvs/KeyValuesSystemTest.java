@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ class KeyValuesSystemTest {
 	void testLoader() throws FileNotFoundException, IOException {
 		Properties properties = new Properties();
 		properties.setProperty("user.home", "/home/kenny");
+		String cwd = Path.of(".").normalize().toAbsolutePath().toString();
 
 		var logger = new TestLogger();
 
@@ -159,10 +161,11 @@ class KeyValuesSystemTest {
 					KeyValue[key='sensitive_a', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=1]]
 					KeyValue[key='sensitive_ab', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=2]]
 					KeyValue[key='mypassword', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=3]]
-					KeyValue[key='classpathstar', raw='ezkv', expanded='ezkv', source=Source[uri=file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties, reference=[key='_load_root30', in='classpaths:/classpathstar.properties'], index=1]]
+					KeyValue[key='classpathstar', raw='ezkv', expanded='ezkv', source=Source[uri=file:{{CWD}}/target/test-classes/classpathstar.properties, reference=[key='_load_root30', in='classpaths:/classpathstar.properties'], index=1]]
 					KeyValue[key='fromMap1', raw='1', expanded='1', source=Source[uri=null:///extra, index=0]]
 					KeyValue[key='fromMap2', raw='2', expanded='2', source=Source[uri=null:///extra, index=0]]
-					""";
+					"""
+				.replace("{{CWD}}", cwd);
 			assertEquals(expected, actual);
 		}
 
@@ -199,9 +202,10 @@ class KeyValuesSystemTest {
 					[INFO ] Loaded  uri='classpath:/test-props/testLoader-sensitive.properties' flags=[SENSITIVE]
 					[DEBUG] Loading uri='classpaths:/classpathstar.properties'
 					[INFO ] Loaded  uri='classpaths:/classpathstar.properties'
-					[DEBUG] Loading uri='file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN] specified with key: '_load_root30' in uri='classpaths:/classpathstar.properties'
-					[INFO ] Loaded  uri='file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN]
-					""";
+					[DEBUG] Loading uri='file:{{CWD}}/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN] specified with key: '_load_root30' in uri='classpaths:/classpathstar.properties'
+					[INFO ] Loaded  uri='file:{{CWD}}/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN]
+					"""
+				.replace("{{CWD}}", cwd);
 			assertEquals(expected, actual);
 		}
 	}
