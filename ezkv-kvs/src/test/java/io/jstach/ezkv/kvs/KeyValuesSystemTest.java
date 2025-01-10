@@ -90,6 +90,7 @@ class KeyValuesSystemTest {
 			.add("provider:///")
 			.add(system)
 			.add("classpath:/test-props/testLoader.properties")
+			.add("classpaths:/classpathstar.properties")
 			.add("extra", KeyValues.builder().add(map.entrySet()).build())
 			.load();
 
@@ -109,6 +110,7 @@ class KeyValuesSystemTest {
 					sensitive_a=REDACTED
 					sensitive_ab=REDACTED
 					mypassword=REDACTED
+					classpathstar=ezkv
 					fromMap1=1
 					fromMap2=2
 					]
@@ -130,6 +132,7 @@ class KeyValuesSystemTest {
 					sensitive_a=a
 					sensitive_ab=ab
 					mypassword=1.2.3.4.5
+					classpathstar=ezkv
 					fromMap1=1
 					fromMap2=2
 									""";
@@ -156,6 +159,7 @@ class KeyValuesSystemTest {
 					KeyValue[key='sensitive_a', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=1]]
 					KeyValue[key='sensitive_ab', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=2]]
 					KeyValue[key='mypassword', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=3]]
+					KeyValue[key='classpathstar', raw='ezkv', expanded='ezkv', source=Source[uri=file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties, reference=[key='_load_root30', in='classpaths:/classpathstar.properties'], index=1]]
 					KeyValue[key='fromMap1', raw='1', expanded='1', source=Source[uri=null:///extra, index=0]]
 					KeyValue[key='fromMap2', raw='2', expanded='2', source=Source[uri=null:///extra, index=0]]
 					""";
@@ -193,6 +197,10 @@ class KeyValuesSystemTest {
 						<-- specified with key: '_load_childwarn' in uri='classpath:/test-props/testLoader.properties'
 					[DEBUG] Loading uri='classpath:/test-props/testLoader-sensitive.properties' flags=[SENSITIVE] specified with key: '_load_luggage' in uri='classpath:/test-props/testLoader.properties'
 					[INFO ] Loaded  uri='classpath:/test-props/testLoader-sensitive.properties' flags=[SENSITIVE]
+					[DEBUG] Loading uri='classpaths:/classpathstar.properties'
+					[INFO ] Loaded  uri='classpaths:/classpathstar.properties'
+					[DEBUG] Loading uri='file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN] specified with key: '_load_root30' in uri='classpaths:/classpathstar.properties'
+					[INFO ] Loaded  uri='file:/Users/agent/projects/ezkv/ezkv-kvs/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN]
 					""";
 			assertEquals(expected, actual);
 		}
@@ -244,6 +252,15 @@ class KeyValuesSystemTest {
 		assertEquals(expected, actual);
 	}
 
+	// @Test
+	// void testManifest() throws IOException, URISyntaxException {
+	// var urls =
+	// Collections.list(KeyValuesSystem.class.getClassLoader().getResources("META-INF/MANIFEST.MF"));
+	// for( var url : urls) {
+	// out.println("url: " + url.toURI());
+	// }
+	// }
+
 	static class TestLogger implements Logger {
 
 		final List<String> events = new ArrayList<>();
@@ -260,19 +277,25 @@ class KeyValuesSystemTest {
 		// return events;
 		// }
 
+		void add(String m) {
+			events.add(m);
+			out.println(m);
+
+		}
+
 		@Override
 		public void debug(String message) {
-			events.add("[DEBUG] " + message);
+			add("[DEBUG] " + message);
 		}
 
 		@Override
 		public void info(String message) {
-			events.add("[INFO ] " + message);
+			add("[INFO ] " + message);
 		}
 
 		@Override
 		public void warn(String message) {
-			events.add("[WARN ] " + message);
+			add("[WARN ] " + message);
 		}
 
 		@Override

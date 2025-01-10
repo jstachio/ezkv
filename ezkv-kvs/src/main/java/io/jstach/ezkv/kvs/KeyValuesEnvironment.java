@@ -5,12 +5,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +28,9 @@ import io.jstach.ezkv.kvs.KeyValuesEnvironment.Logger;
  * <p>
  * Implementations can replace default system behaviors, enabling custom retrieval of
  * environment variables or properties, or integrating custom logging mechanisms.
+ *
+ * @apiNote The API in this class uses traditional getter methods because the methods are
+ * often dynamic and to be consistent with the methods they are facading.
  */
 public interface KeyValuesEnvironment {
 
@@ -91,15 +97,21 @@ public interface KeyValuesEnvironment {
 	}
 
 	/**
-	 * Retrieves the {@link ResourceStreamLoader} used for loading resources as streams.
+	 * Retrieves the {@link ResourceLoader} used for loading resources as streams.
 	 * @return the resource stream loader instance
 	 */
-	default ResourceStreamLoader getResourceStreamLoader() {
-		return new ResourceStreamLoader() {
+	default ResourceLoader getResourceLoader() {
+		return new ResourceLoader() {
 
 			@Override
 			public @Nullable InputStream getResourceAsStream(String path) throws IOException {
 				return getClassLoader().getResourceAsStream(path);
+			}
+
+			@Override
+			public Stream<URL> getResources(String path) throws IOException {
+				var cl = getClassLoader();
+				return Collections.list(cl.getResources(path)).stream();
 			}
 		};
 	}
@@ -121,7 +133,7 @@ public interface KeyValuesEnvironment {
 	}
 
 	/**
-	 * Retrieves the system class loader. By default, delegates to
+	 * Retrieves the class loader. By default, delegates to
 	 * {@link ClassLoader#getSystemClassLoader()}.
 	 * @return the system class loader
 	 */
@@ -130,9 +142,9 @@ public interface KeyValuesEnvironment {
 	}
 
 	/**
-	 * Interface for loading resources as input streams.
+	 * Interface for loading resources.
 	 */
-	public interface ResourceStreamLoader {
+	public interface ResourceLoader {
 
 		/**
 		 * Retrieves an input stream for the specified resource path.
@@ -141,6 +153,15 @@ public interface KeyValuesEnvironment {
 		 * @throws IOException if an I/O error occurs
 		 */
 		public @Nullable InputStream getResourceAsStream(String path) throws IOException;
+
+		/**
+		 * Retrieves classpath resources basically equilvant to
+		 * {@link ClassLoader#getResources(String)}.
+		 * @param path see {@link ClassLoader#getResources(String)}.
+		 * @return a stream of urls.
+		 * @throws IOException if an IO error happens getting the resources URLs.
+		 */
+		public Stream<URL> getResources(String path) throws IOException;
 
 		/**
 		 * Opens an input stream for the specified resource path. Throws a
