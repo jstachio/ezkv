@@ -107,6 +107,8 @@ class KeyValuesSystemTest {
 					profile1=loaded 2
 					profile2=loaded
 					me=found
+					sensitive_a=REDACTED
+					sensitive_ab=REDACTED
 					mypassword=REDACTED
 					fromMap1=1
 					fromMap2=2
@@ -126,6 +128,8 @@ class KeyValuesSystemTest {
 					profile1=loaded 2
 					profile2=loaded
 					me=found
+					sensitive_a=a
+					sensitive_ab=ab
 					mypassword=1.2.3.4.5
 					fromMap1=1
 					fromMap2=2
@@ -150,7 +154,9 @@ class KeyValuesSystemTest {
 					KeyValue[key='profile1', raw='loaded 2', expanded='loaded 2', source=Source[uri=classpath:/test-props/testLoader-profile2.properties, reference=[key='_load_profiles1', in='profile.classpath:/test-props/testLoader-__PROFILE__.properties'], index=1]]
 					KeyValue[key='profile2', raw='loaded', expanded='loaded', source=Source[uri=classpath:/test-props/testLoader-profile2.properties, reference=[key='_load_profiles1', in='profile.classpath:/test-props/testLoader-__PROFILE__.properties'], index=2]]
 					KeyValue[key='me', originalKey='matchme', raw='found', expanded='found', source=Source[uri=classpath:/test-props/testLoader-filter.properties, reference=[key='_load_filter', in='classpath:/test-props/testLoader-child.properties'], index=1]]
-					KeyValue[key='mypassword', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=1]]
+					KeyValue[key='sensitive_a', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=1]]
+					KeyValue[key='sensitive_ab', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=2]]
+					KeyValue[key='mypassword', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=3]]
 					KeyValue[key='fromMap1', raw='1', expanded='1', source=Source[uri=null:///extra, index=0]]
 					KeyValue[key='fromMap2', raw='2', expanded='2', source=Source[uri=null:///extra, index=0]]
 					""";

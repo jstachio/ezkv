@@ -374,7 +374,7 @@ public interface KeyValues extends Iterable<KeyValue> {
 	 * @see Variables#empty()
 	 */
 	default KeyValues expand(Variables variables) {
-		return KeyValuesInterpolator.interpolateKeyValues(this, variables);
+		return KeyValuesInterpolator.interpolateKeyValues(this, variables, false);
 	}
 
 	/**
@@ -501,7 +501,9 @@ record ListKeyValues(List<KeyValue> keyValues) implements ToStringableKeyValues,
 
 class KeyValuesInterpolator {
 
-	static KeyValues interpolateKeyValues(final KeyValues keyValues, final Variables variables) {
+	static KeyValues interpolateKeyValues(final KeyValues keyValues, final Variables variables, boolean local) {
+		// local flag indicates all the key values
+		// are from the same resource.
 		List<KeyValue> kvs = keyValues.stream().toList();
 
 		final Map<String, KeyValue> flat = new HashMap<>(kvs.size());
@@ -525,12 +527,18 @@ class KeyValuesInterpolator {
 
 		for (KeyValue kv : kvs) {
 			KeyValue last = flat.remove(kv.key());
-			String v = kv.raw();
+
 			String value;
-			if (kv.isNoInterpolation() || kv.isSensitive()) {
-				value = v;
+			/*
+			 * We allow sensitive to be interpolated locally. The assumption here is when
+			 * the local flag is passed all the key values passed are from the same
+			 * resource.
+			 */
+			if (kv.isNoInterpolation() || (kv.isSensitive() && !local)) {
+				value = kv.value();
 			}
 			else {
+				String v = kv.raw();
 				try {
 					value = (v.indexOf('$') != -1) ? sub.interpolate(kv.key(), v) : v;
 				}
@@ -538,6 +546,7 @@ class KeyValuesInterpolator {
 					throw e;
 				}
 				catch (InterpolationException e) {
+					// TODO this was old code that may not long be applicable.
 					String r = resolved.get(kv.key());
 					if (r == null) {
 						r = kv.expanded();
@@ -552,6 +561,7 @@ class KeyValuesInterpolator {
 			}
 
 		}
+
 		return KeyValues.copyOf(expanded);
 	}
 

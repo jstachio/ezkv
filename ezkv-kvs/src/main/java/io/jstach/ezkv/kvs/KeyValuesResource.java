@@ -303,10 +303,11 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	public static final String FLAG_NO_RELOAD = "NO_RELOAD";
 
 	/**
-	 * Indicates that the resource's properties should inherit from parent or default
-	 * configurations.
+	 * Indicates that the resource should pass its flags down to child resources
+	 * regardless if the child resource has them set or not. To disable propagation on a
+	 * child one could attach <code>NO_</code> in front of this flag.
 	 */
-	public static final String FLAG_INHERIT = "INHERIT";
+	public static final String FLAG_PROPAGATE = "PROPAGATE";
 
 	/**
 	 * By default resource keys are prefixed with {@value #DEFAULT_KEY_PREFIX}. Note that

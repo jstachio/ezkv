@@ -49,6 +49,13 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 	 * load path but we probably do not need to do this as each kv has the source.
 	 */
 	record Node(NamedKeyValuesSource current, @Nullable Node parent) {
+
+		Set<LoadFlag> loadFlags() {
+			return switch (current) {
+				case NamedKeyValues nk -> EnumSet.noneOf(LoadFlag.class);
+				case InternalKeyValuesResource ir -> ir.loadFlags();
+			};
+		}
 	}
 
 	static KeyValuesLoader of(KeyValuesSystem system, Variables rootVariables,
@@ -100,11 +107,15 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 			// pop
 			var node = fs.remove(0);
 			var resource = node.current;
-			Set<LoadFlag> flags = KeyValuesSource.loadFlags(resource);
+			// Set<LoadFlag> flags = KeyValuesSource.loadFlags(resource);
 
+			// KeyValues kvs;
+
+			Set<LoadFlag> flags = Set.of();
 			var kvs = switch (resource) {
 				case KeyValuesResource r -> {
 					InternalKeyValuesResource normalizedResource = normalizeResource(r, node);
+					flags = normalizedResource.loadFlags();
 					yield loadAndFilter(node, normalizedResource, flags);
 				}
 				case NamedKeyValues _kvs -> _kvs.keyValues();
@@ -120,7 +131,7 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 				// no interpolate flag.
 				kvs = kvs.expand(variables);
 			}
-			List<? extends InternalKeyValuesResource> foundResources = parseResources(kvs, node);
+			List<? extends InternalKeyValuesResource> foundResources = parseResources(kvs, node, flags);
 			if (LoadFlag.NO_LOAD_CHILDREN.isSet(flags) && !foundResources.isEmpty()) {
 				foundResources = List.of();
 				logger.warn("Resource is not allowed to load children but had load keys (ignoring). resource: "
@@ -160,10 +171,14 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 
 	}
 
-	private List<? extends InternalKeyValuesResource> parseResources(KeyValues kvs, Node node) throws IOException {
+	private List<? extends InternalKeyValuesResource> parseResources(KeyValues kvs, Node node, Set<LoadFlag> loadFlags)
+			throws IOException {
 		List<? extends InternalKeyValuesResource> foundResources;
 		try {
-			foundResources = resourceParser.parseResources(kvs);
+			if (!LoadFlag.PROPAGATE.isSet(loadFlags)) {
+				loadFlags = Set.of();
+			}
+			foundResources = resourceParser.parseResources(kvs, loadFlags);
 		}
 		catch (KeyValuesResourceParserException e) {
 			throw new IOException("Resource has an invalid resource key.  resource: " + describe(node), e);
@@ -216,10 +231,14 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 		try {
 			KeyValues kvs;
 			try {
-				kvs = system.loaderFinder()
+				var kvsNotInterpolated = system.loaderFinder()
 					.findLoader(context, resource)
 					.orElseThrow(() -> new IOException("Resource Loader not found. resource: " + describe(node)))
 					.load();
+				/*
+				 * We now interpolate locally.
+				 */
+				kvs = KeyValuesInterpolator.interpolateKeyValues(kvsNotInterpolated, variables, true);
 			}
 			catch (UncheckedIOException e) {
 				throw e.getCause();
@@ -273,6 +292,12 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 
 }
 
+/**
+ * So why is load flags not public? Well exposing an enum as public API now with pattern
+ * matching is problematic as someone could pattern match on it. The other reason is that
+ * we still need the constant string flag names as most of the configuration is done
+ * through string and not programmatically.
+ */
 enum LoadFlag {
 
 	/**
@@ -282,9 +307,9 @@ enum LoadFlag {
 			KeyValuesResource.FLAG_NOT_REQUIRED)),
 
 	/**
-	 * TODO
+	 * unlike required this means if the resource is found but has no keys its a failure.
 	 */
-	NO_EMPTY(KeyValuesResource.FLAG_NO_EMPTY),
+	NO_EMPTY(KeyValuesResource.FLAG_NO_EMPTY), // DONE
 
 	/**
 	 * Confusing but this means the resource should not have its properties overriden. Not
@@ -295,7 +320,7 @@ enum LoadFlag {
 	/**
 	 * This basically says the resource can only add new key values.
 	 */
-	NO_REPLACE(KeyValuesResource.FLAG_NO_REPLACE), // TODO filter could do this
+	NO_REPLACE(KeyValuesResource.FLAG_NO_REPLACE), // DONE TODO filter could do this
 
 	/**
 	 * Will add the kvs to variables but not to the final resolved key values.
@@ -305,17 +330,17 @@ enum LoadFlag {
 	/**
 	 * Disables _load calls on child.
 	 */
-	NO_LOAD_CHILDREN(KeyValuesResource.FLAG_NO_LOAD_CHILDREN),
+	NO_LOAD_CHILDREN(KeyValuesResource.FLAG_NO_LOAD_CHILDREN), // Done
 
 	/**
 	 * Will not interpolate key values loaded ever.
 	 */
-	NO_INTERPOLATE(KeyValuesResource.FLAG_NO_INTERPOLATE),
+	NO_INTERPOLATE(KeyValuesResource.FLAG_NO_INTERPOLATE), // Done
 
 	/**
 	 * Will not toString or print out sensitive
 	 */
-	SENSITIVE(KeyValuesResource.FLAG_SENSITIVE),
+	SENSITIVE(KeyValuesResource.FLAG_SENSITIVE), // Done
 
 	/**
 	 * Hints to filter to retain resource keys.
@@ -328,9 +353,9 @@ enum LoadFlag {
 	NO_RELOAD(KeyValuesResource.FLAG_NO_RELOAD),
 
 	/**
-	 * TODO
+	 * Pass flags downards.
 	 */
-	INHERIT(KeyValuesResource.FLAG_INHERIT);
+	PROPAGATE(KeyValuesResource.FLAG_PROPAGATE);
 
 	@SuppressWarnings("ImmutableEnumChecker")
 	private final Set<String> names;

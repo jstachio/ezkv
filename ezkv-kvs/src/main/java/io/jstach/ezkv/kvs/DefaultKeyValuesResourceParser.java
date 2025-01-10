@@ -3,6 +3,7 @@ package io.jstach.ezkv.kvs;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -99,11 +100,11 @@ enum DefaultKeyValuesResourceParser implements KeyValuesResourceParser {
 	// Parsing Resource
 
 	@Override
-	public List<? extends InternalKeyValuesResource> parseResources(KeyValues keyValues)
+	public List<? extends InternalKeyValuesResource> parseResources(KeyValues keyValues, Set<LoadFlag> loadFlags)
 			throws KeyValuesResourceParserException {
 		List<InternalKeyValuesResource> resources = new ArrayList<>();
 		for (var kv : keyValues) {
-			var r = parseResourceOrNull(kv, keyValues);
+			var r = parseResourceOrNull(kv, keyValues, loadFlags);
 			if (r != null) {
 				resources.add(r);
 			}
@@ -157,13 +158,14 @@ enum DefaultKeyValuesResourceParser implements KeyValuesResourceParser {
 		}
 	}
 
-	private @Nullable InternalKeyValuesResource parseResourceOrNull(KeyValue keyValue, KeyValues keyValues)
-			throws KeyValuesResourceParserException {
+	private @Nullable InternalKeyValuesResource parseResourceOrNull(KeyValue keyValue, KeyValues keyValues,
+			Set<LoadFlag> loadFlags) throws KeyValuesResourceParserException {
 		var resource = parseLoadOrNull(keyValue);
 		if (resource == null) {
 			return null;
 		}
 		var builder = new KeyValuesResource.Builder(resource.uri(), resource.name());
+		builder.flags.addAll(loadFlags);
 		parseURI(builder, resource.uri());
 		parseKeyValues(builder, resource, keyValues);
 		builder.reference = keyValue;

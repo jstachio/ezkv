@@ -1,6 +1,7 @@
 package io.jstach.ezkv.kvs;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 /*
@@ -29,11 +30,12 @@ sealed interface KeyValuesResourceParser permits DefaultKeyValuesResourceParser 
 	 * Parses a {@link KeyValues} stream and returns a list of {@link KeyValuesResource}
 	 * objects representing resources that should be loaded.
 	 * @param keyValues the key-values to parse for resource references
+	 * @param loadFlags loadFlags to be inherited.
 	 * @return a list of resources parsed from the key-values
 	 * @throws KeyValuesResourceParserException if key values has an incorrect resource
 	 * key format.
 	 */
-	List<? extends InternalKeyValuesResource> parseResources(KeyValues keyValues)
+	List<? extends InternalKeyValuesResource> parseResources(KeyValues keyValues, Set<LoadFlag> loadFlags)
 			throws KeyValuesResourceParserException;
 
 	// TODO we should probably make a ParsedKeyValuesResource or
