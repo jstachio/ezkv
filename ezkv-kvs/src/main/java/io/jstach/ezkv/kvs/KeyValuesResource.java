@@ -32,6 +32,8 @@ import io.jstach.ezkv.kvs.Variables.Parameters;
  * <ul>
  * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CLASSPATH} - classpath
  * resource</li>
+ * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CLASSPATHS} - for merging
+ * mulitple resources with the same name on the classpath (use with caution).</li>
  * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_FILE} - file resource</li>
  * <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_SYSTEM} - System
  * properties</li>
@@ -388,7 +390,7 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	// @formatter:off
 	/**
 	 * Classpath resource is loaded using
-	 * {@link KeyValuesEnvironment#getResourceStreamLoader()}.
+	 * {@link KeyValuesEnvironment#getResourceLoader()}.
 	 *
 	 * {@snippet lang=properties :
 	 * _load_app=classpath:///app.properties
@@ -396,6 +398,22 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 */
 	// @formatter:on
 	public static final String SCHEMA_CLASSPATH = "classpath";
+
+	// @formatter:off
+	/**
+	 * Classpaths (<strong> note the plural "s"</strong>) resource is loaded using
+	 * {@link KeyValuesEnvironment#getResourceLoader()}. This is analogous
+	 * to Spring's <code>classpath*</code> resource support where all
+	 * matching resources of the same name are loaded.
+	 *
+	 * {@snippet lang=properties :
+	 * _load_app=classpaths:///app.properties
+	 * }
+	 * For security reasons this resource will not allow
+	 * the found resources to load children.
+	 */
+	// @formatter:on
+	public static final String SCHEMA_CLASSPATHS = "classpaths";
 
 	// @formatter:off
 	/**

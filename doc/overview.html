@@ -306,8 +306,13 @@ See <a href="#keyvaluesmedia">KeyValuesMedia section</a> for information on how 
 
 <h4 id="resource-filters">Resource Filters</h4>
 <p>Filters can be applied to a resource to alter the key values after they are loaded and are <em>applied before being parsed
-  for more resources to load</em> and before being added to the final results. 
-The ordering of filters matters, so it is generally recommended to use the URI notation, as the order is guaranteed.</p>
+  for more resources to load</em> and before being added to the final results.
+Thus if the resource has child resources the filters are not applied to the childs key values when they are loaded.
+Only the resource's key values are filtered.
+</p>
+<p>
+The ordering of filters matters, so it is generally recommended to use the URI notation, as the order is guaranteed.
+</p>
 
 <p>The current filters provided out-of-the-box (OOB) are:</p>
 <ul>
@@ -385,6 +390,7 @@ based on the schema of the URI. For example:</p>
 
 <ul>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CLASSPATH} - classpath resource</li>
+    <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CLASSPATHS} - merge multiple classpath resource with same name.</li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_FILE} - file resource</li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_SYSTEM} - System properties</li>
     <li>{@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_ENV} - Environment variables</li>
@@ -505,6 +511,39 @@ And then register it using the {@link java.util.ServiceLoader} registration with
 the service class of {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider}.
 See {@link io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider}
 for more details on proper usage.
+
+<h4 id="uri-schemas-classpaths">URI schema: <code>classpaths</code></h4>
+
+The {@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_CLASSPATHS} (notice the "s" on the end) schema allows loading multiple resources
+found on the class/modulepath with the same name. 
+
+<p>
+It analogous to Spring's <code>classpath*</code> 
+support (<code>classpath*</code> is not a valid URI schema). However unlike Spring Ant wild card support
+is not currently provided. 
+</p>
+<p>
+It can also be used to mimic <a href="https://github.com/lightbend/config?tab=readme-ov-file#standard-behavior">
+Lightbend/Typesafe Config <code>reference.conf</code></a> support by <code>classpaths:/reference.conf</code>
+</p>
+
+<strong>
+  It is highly recommended you try not use this and is provided to support mimicing other configuration
+  systems.
+</strong>
+
+<ul>
+  <li>It is unlikely to work in "uber jars" created by Maven Shade or similar 
+    <a href="https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html">without proper config</a>.</li>
+  <li>It has issues in GraalVM native</li>
+  <li>The ordering is not reliable as it is based on the order of the classpath</li>
+  <li>In a modular environment encapsulation issues maybe present</li>
+  <li>For security reasons the found resources are not allowed to load children.</li>
+  <li><strong>But most of all it is incredibly slow!</strong></li>
+</ul>
+
+Instead a more reliable option is to use the <a href="#uri-schema-provider">provider</a> support or just plain <code>classpath</code> (no "s" on end).
+
 
 <h3 id="keyvaluesmedia">KeyValuesMedia</h3>
 

@@ -5,22 +5,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import io.jstach.ezkv.kvs.KeyValuesEnvironment.ResourceStreamLoader;
+import io.jstach.ezkv.kvs.KeyValuesEnvironment.ResourceLoader;
 import io.jstach.ezkv.kvs.KeyValuesMedia.Parser;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesLoaderFinder;
 
@@ -83,6 +88,64 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
 			var parser = context.requireParser(resource);
 			return load(context, resource, parser);
+		}
+	},
+	CLASSPATHS(KeyValuesResource.SCHEMA_CLASSPATHS) {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			// var parser = context.requireParser(resource);
+			// var logger = context.environment().getLogger();
+			URI u = resource.uri();
+			String path = normalizePath(u);
+			if (path.isBlank()) {
+				throw new MalformedURLException("Classpaths scheme URI requires a path. URI: " + u);
+			}
+			List<URL> urls = context.environment().getResourceLoader().getResources(path).toList();
+
+			/*
+			 * Ok so what we are doing here is creating resource key values to load the
+			 * providers just like how profiles work.
+			 */
+			List<KeyValuesResource> childResources = new ArrayList<>();
+			String name = resource.name();
+
+			// dedupe resource URLs.
+			// yes the classloader will give you duplicates.
+			Set<URI> foundURIs = new HashSet<>();
+			int i = 0;
+			for (var url : urls) {
+				// We change the name and the URI but retain other
+				// resource config (inherited).
+				var builder = resource.toBuilder();
+				URI uri;
+				try {
+					uri = url.toURI();
+				}
+				catch (URISyntaxException e) {
+					throw new IOException("Unsupported resource URL: " + url, e);
+				}
+				if (!foundURIs.add(uri)) {
+					continue;
+				}
+				builder.name(name + i++);
+				builder.uri(uri);
+				/*
+				 * We don't allow loading of children for security reasons.
+				 */
+				builder._addFlag(LoadFlag.NO_LOAD_CHILDREN);
+				childResources.add(builder.build());
+			}
+			return childResources(context, resource, childResources);
+
+			// var b = KeyValues.builder(resource);
+			// for (var url : urls) {
+			// logger.debug("Classpaths loading: " + url);
+			// try (var is = url.openStream()) {
+			// parser.parse(is, b::add);
+			// }
+			// }
+			// return b.build();
+
 		}
 	},
 	FILE(KeyValuesResource.SCHEMA_FILE) {
@@ -189,6 +252,36 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 			return maybeUseKeyFromUri(context, resource, kvs);
 		}
 	},
+	JAR("jar") {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			return loadURL(context, resource);
+		}
+	},
+	JRT("jrt") {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			return loadURL(context, resource);
+		}
+	},
+	VFS("vfs") {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			return loadURL(context, resource);
+		}
+	},
+	VFSZIP("vfszip") {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			return loadURL(context, resource);
+		}
+	},
+	BUNDLE("bundle") {
+		@Override
+		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+			return loadURL(context, resource);
+		}
+	},
 
 	;
 
@@ -224,7 +317,7 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 	protected KeyValues load(LoaderContext context, KeyValuesResource resource, Parser parser) throws IOException {
 		var fileSystem = context.environment().getFileSystem();
 		var cwd = context.environment().getCWD();
-		var is = openURI(resource.uri(), context.environment().getResourceStreamLoader(), fileSystem, cwd);
+		var is = openURI(resource.uri(), context.environment().getResourceLoader(), fileSystem, cwd);
 		return parser.parse(resource, is);
 	}
 
@@ -332,7 +425,16 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		return p;
 	}
 
-	static InputStream openURI(URI u, ResourceStreamLoader loader, FileSystem fileSystem, @Nullable Path cwd)
+	static KeyValues loadURL(LoaderContext context, KeyValuesResource resource)
+			throws MalformedURLException, IOException {
+		URL url = resource.uri().toURL();
+		var parser = context.requireParser(resource);
+		try (var is = url.openStream()) {
+			return parser.parse(resource, is);
+		}
+	}
+
+	static InputStream openURI(URI u, ResourceLoader loader, FileSystem fileSystem, @Nullable Path cwd)
 			throws IOException {
 		if ("classpath".equals(u.getScheme())) {
 			String path = u.getPath();

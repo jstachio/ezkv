@@ -7,6 +7,7 @@ import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -58,7 +59,9 @@ public interface KeyValuesLoader {
 
 		final List<Function<KeyValuesEnvironment, ? extends Variables>> variables = new ArrayList<>();
 
-		int resourceCount = 0;
+		private int resourceCount = 0;
+
+		private String namePrefix = "root";
 
 		Builder(Function<Builder, KeyValuesLoader> loaderFactory) {
 			super();
@@ -101,15 +104,19 @@ public interface KeyValuesLoader {
 
 		/**
 		 * Adds a {@link URI} as a source by wrapping it in a {@link KeyValuesResource}.
+		 * The name of the resource will be automatically generated based on
+		 * {@link #namePrefix(String)} and a counter.
 		 * @param uri the URI to add
 		 * @return this builder instance
 		 */
 		public Builder add(URI uri) {
-			return add(KeyValuesResource.builder(uri).name("resource" + resourceCount).build());
+			return add(KeyValuesResource.builder(uri).name(namePrefix + resourceCount).build());
 		}
 
 		/**
-		 * Adds a URI specified as a string as a source to the loader.
+		 * Adds a URI specified as a string as a source to the loader. The name of the
+		 * resource will be automatically generated based on {@link #namePrefix(String)}
+		 * and a counter.
 		 * @param uri the URI string to add
 		 * @return this builder instance
 		 */
@@ -153,6 +160,17 @@ public interface KeyValuesLoader {
 		 */
 		public Builder resource(Function<KeyValuesEnvironment, KeyValuesResource> resourceFactory) {
 			this.sources.add(resourceFactory);
+			return this;
+		}
+
+		/**
+		 * Sets the resource name prefix for auto naming of resources based on a counter.
+		 * This is to support the add methods that do not specify a resource name.
+		 * @param namePrefix must follow {@value KeyValuesResource#RESOURCE_NAME_REGEX}
+		 * @return by default <code>root</code>.
+		 */
+		public Builder namePrefix(String namePrefix) {
+			this.namePrefix = KeyValuesSource.validateName(namePrefix);
 			return this;
 		}
 
