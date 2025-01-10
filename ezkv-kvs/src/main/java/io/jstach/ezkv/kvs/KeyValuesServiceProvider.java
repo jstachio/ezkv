@@ -142,7 +142,7 @@ public sealed interface KeyValuesServiceProvider {
 		 * A context provided to {@link KeyValuesProvider} implementations to supply
 		 * necessary dependencies and services.
 		 */
-		public sealed interface ProviderContext extends LoaderContext {
+		public sealed interface ProviderContext extends Context {
 
 		}
 
