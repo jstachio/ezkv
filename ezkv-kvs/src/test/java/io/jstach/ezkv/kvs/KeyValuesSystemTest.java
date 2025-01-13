@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ class KeyValuesSystemTest {
 
 			@Override
 			public InputStream getStandardInput() {
-				return new ByteArrayInputStream(stdin.getBytes());
+				return new ByteArrayInputStream(stdin.getBytes(StandardCharsets.UTF_8));
 			}
 
 			@Override
