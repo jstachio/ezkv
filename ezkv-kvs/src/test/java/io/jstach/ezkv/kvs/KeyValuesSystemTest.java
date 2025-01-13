@@ -3,8 +3,10 @@ package io.jstach.ezkv.kvs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.nio.file.Path;
@@ -15,6 +17,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import io.jstach.ezkv.kvs.KeyValuesEnvironment.Logger;
@@ -45,6 +48,10 @@ class KeyValuesSystemTest {
 
 		var logger = new TestLogger();
 
+		String stdin = """
+				stdin_password=guest
+				""";
+
 		var environment = new KeyValuesEnvironment() {
 			@Override
 			public Properties getSystemProperties() {
@@ -54,6 +61,16 @@ class KeyValuesSystemTest {
 			@Override
 			public Logger getLogger() {
 				return logger;
+			}
+
+			@Override
+			public InputStream getStandardInput() {
+				return new ByteArrayInputStream(stdin.getBytes());
+			}
+
+			@Override
+			public @NonNull String[] getMainArgs() {
+				return new String[] { "--passwords" };
 			}
 
 		};
@@ -93,6 +110,7 @@ class KeyValuesSystemTest {
 			.add(system)
 			.add("classpath:/test-props/testLoader.properties")
 			.add("classpaths:/classpathstar.properties")
+			.add("stdin:///?_p_stdin_arg=--passwords&_mime=properties&_flag=sensitive")
 			.add("extra", KeyValues.builder().add(map.entrySet()).build())
 			.load();
 
@@ -113,6 +131,7 @@ class KeyValuesSystemTest {
 					sensitive_ab=REDACTED
 					mypassword=REDACTED
 					classpathstar=ezkv
+					stdin_password=REDACTED
 					fromMap1=1
 					fromMap2=2
 					]
@@ -135,6 +154,7 @@ class KeyValuesSystemTest {
 					sensitive_ab=ab
 					mypassword=1.2.3.4.5
 					classpathstar=ezkv
+					stdin_password=guest
 					fromMap1=1
 					fromMap2=2
 									""";
@@ -162,6 +182,7 @@ class KeyValuesSystemTest {
 					KeyValue[key='sensitive_ab', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=2]]
 					KeyValue[key='mypassword', raw='REDACTED', expanded='REDACTED', source=Source[uri=classpath:/test-props/testLoader-sensitive.properties, reference=[key='_load_luggage', in='classpath:/test-props/testLoader.properties'], index=3]]
 					KeyValue[key='classpathstar', raw='ezkv', expanded='ezkv', source=Source[uri=file:{{CWD}}/target/test-classes/classpathstar.properties, reference=[key='_load_root30', in='classpaths:/classpathstar.properties'], index=1]]
+					KeyValue[key='stdin_password', raw='REDACTED', expanded='REDACTED', source=Source[uri=stdin:///, index=1]]
 					KeyValue[key='fromMap1', raw='1', expanded='1', source=Source[uri=null:///extra, index=0]]
 					KeyValue[key='fromMap2', raw='2', expanded='2', source=Source[uri=null:///extra, index=0]]
 					"""
@@ -204,6 +225,8 @@ class KeyValuesSystemTest {
 					[INFO ] Loaded  uri='classpaths:/classpathstar.properties'
 					[DEBUG] Loading uri='file:{{CWD}}/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN] specified with key: '_load_root30' in uri='classpaths:/classpathstar.properties'
 					[INFO ] Loaded  uri='file:{{CWD}}/target/test-classes/classpathstar.properties' flags=[NO_LOAD_CHILDREN]
+					[DEBUG] Loading uri='stdin:///' flags=[SENSITIVE]
+					[INFO ] Loaded  uri='stdin:///' flags=[SENSITIVE]
 					"""
 				.replace("{{CWD}}", cwd);
 			assertEquals(expected, actual);

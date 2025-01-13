@@ -438,6 +438,34 @@ _load_stdin=stdin:///db.password?_flag=sensitive,optional
 <p>The above example is particularly useful for passwords, similar to 
 <a href="https://docs.docker.com/reference/cli/docker/login/#password-stdin" target="_blank">how Docker handles passwords from stdin</a>.</p>
 
+
+Stdin is retrieved from {@link io.jstach.ezkv.kvs.KeyValuesEnvironment#getStandardInput()}.
+Because checking stdin will block an application one must enable reading from it which is done
+by either:
+<ol>
+<li> Checking resource parameter of {@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_STDIN_PARAM} is <code>true</code>.
+</li>
+<li>Setting {@value io.jstach.ezkv.kvs.KeyValuesResource#SCHEMA_STDIN_MAIN_ARG_PARAM} to 
+{@linkplain io.jstach.ezkv.kvs.KeyValuesEnvironment#getMainArgs() command line argument} to check if present.
+</li>
+<li>
+Relying on the default which will check "<code>--</code>" + {@link io.jstach.ezkv.kvs.KeyValuesResource#name()}
+command line argument is present.
+</li>
+</ol>
+
+{@snippet lang=properties :
+# will be enabled if --dbpassword is passed on the command line
+# since dbpassword is the resource name.
+_load_dbpassword=stdin:///db.password?_flag=sensitive,optional
+# specify that the "--password" command line arg is required
+_load_stdin=stdin:///db.password?_param_stdin_arg=--password&_flag=sensitive
+# alternatively one can do:
+_load_stdin=stdin:///?_p_stdin=${some_other_variable}
+# which will be enabled if some_other_variable evalutes to 'true'
+}
+
+
 <h4 id="uri-schema-profile">URI schema: <code>profile.</code></h4>
 <p><strong>Note:</strong> This schema may be renamed to <code>profiles</code> in the future.</p>
 

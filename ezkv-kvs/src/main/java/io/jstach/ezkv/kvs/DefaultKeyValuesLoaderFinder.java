@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -179,6 +178,33 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 	STDIN(KeyValuesResource.SCHEMA_STDIN) {
 		@Override
 		protected KeyValues load(LoaderContext context, KeyValuesResource resource) throws IOException {
+
+			boolean enabled;
+
+			String stdinEnabled = resource.parameters().getValue(KeyValuesResource.SCHEMA_STDIN_PARAM);
+
+			if (stdinEnabled != null) {
+				enabled = Boolean.parseBoolean(stdinEnabled);
+			}
+			else {
+				String mainArgName = resource.parameters().getValue(KeyValuesResource.SCHEMA_STDIN_MAIN_ARG_PARAM);
+
+				if (mainArgName == null) {
+					mainArgName = "--" + resource.name();
+				}
+				String argName = mainArgName;
+
+				enabled = Arrays.asList(context.environment().getMainArgs())
+					.stream()
+					.filter(s -> s.equals(argName))
+					.findFirst()
+					.isPresent();
+			}
+
+			if (!enabled) {
+				throw new FileNotFoundException("stdin not enabled.");
+			}
+
 			var builder = KeyValues.builder(resource);
 
 			BiConsumer<String, String> consumer = builder::add;
