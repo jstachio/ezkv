@@ -486,16 +486,48 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * </p>
 	 * <code>stdin:///</code> can also bind the input content, parsed as a UTF-8 string,
 	 * to the key provided in the URI path.
+	 * <p>
+	 * Stdin is retrieved from {@link KeyValuesEnvironment#getStandardInput()}.
+	 * Because checking stdin will block an application one must enable reading from it which is done
+	 * by either:
+	 * <ol>
+	 * <li> Checking resource parameter of {@value #SCHEMA_STDIN_PARAM} is <code>true</code>.
+	 * </li>
+	 * <li>Setting {@value #SCHEMA_STDIN_MAIN_ARG_PARAM} to 
+	 * {@linkplain KeyValuesEnvironment#getMainArgs() command line argument} to check if present.
+	 * </li>
+	 * <li>
+	 * Relying on the default which will check <code>--</code> {@link KeyValuesResource#name()}
+	 * command line argument is present.
+	 * </li>
+	 * </ol>
 	 *
 	 * {@snippet lang=properties :
+	 * # will be enabled if --stdin is passed on the command line
+	 * # since stdin in is the resource name.
 	 * _load_stdin=stdin:///db.password?_flag=sensitive,optional
+	 * # alternatively one can do:
+	 * _load_stdin=stdin:///?_p_stdin=${some_other_variable}
 	 * }
-	 *
-	 * Stdin is retrieved from {@link KeyValuesEnvironment#getStandardInput()}.
-	 *
+	 * @see #SCHEMA_STDIN_PARAM
+	 * @see #SCHEMA_STDIN_MAIN_ARG_PARAM
+	 * @see KeyValuesEnvironment#getMainArgs()
 	 */
 	// @formatter:on
 	public static final String SCHEMA_STDIN = "stdin";
+
+	/**
+	 * Resource parameter to enable stdin.
+	 * @see #SCHEMA_STDIN
+	 */
+	public static final String SCHEMA_STDIN_PARAM = "stdin";
+
+	/**
+	 * Resource parameter to decide what command line argument should be present to allow
+	 * reading from stdin.
+	 * @see #SCHEMA_STDIN
+	 */
+	public static final String SCHEMA_STDIN_MAIN_ARG_PARAM = "stdin_arg";
 
 	/**
 	 * Will load multiple resources based on a CSV of profiles where the profile name

@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Function;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter;
@@ -106,11 +108,26 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 	/**
 	 * Returns a default implementation of {@code KeyValuesSystem} configured with
 	 * standard settings and a ServiceLoader based on {@link KeyValuesServiceProvider} and
-	 * its classloader.
+	 * its classloader. If possible prefer {@link #defaults(String[])} to provide command
+	 * line arguments.
 	 * @return the default {@code KeyValuesSystem} instance
 	 */
 	public static KeyValuesSystem defaults() {
 		return builder().useServiceLoader().build();
+	}
+
+	/**
+	 * Returns a default implementation of {@code KeyValuesSystem} configured with
+	 * standard settings and a ServiceLoader based on {@link KeyValuesServiceProvider} and
+	 * its classloader.
+	 * @param mainArgs arguments that come from
+	 * <code>public static void main(String [] args)</code>.
+	 * @return the default {@code KeyValuesSystem} instance
+	 */
+	public static KeyValuesSystem defaults(@NonNull String[] mainArgs) {
+		Objects.requireNonNull(mainArgs);
+		var env = new DefaultKeyValuesEnvironment(mainArgs);
+		return builder().environment(env).useServiceLoader().build();
 	}
 
 	/**
@@ -240,7 +257,7 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 		public KeyValuesSystem build() {
 			var environment = this.environment;
 			if (environment == null) {
-				environment = new DefaultKeyValuesEnvironment();
+				environment = new DefaultKeyValuesEnvironment(null);
 			}
 			/*
 			 * We copy as we are about to use the service loader to add more entries and

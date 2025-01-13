@@ -9,7 +9,10 @@ import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -34,6 +37,7 @@ import io.jstach.ezkv.kvs.KeyValuesEnvironment.Logger;
  */
 public interface KeyValuesEnvironment {
 
+	// TODO remove
 	/**
 	 * If the loader builder is not passed any resources this resource will be used.
 	 * @return default resource is <code>classpath:/boot.properties</code>
@@ -47,7 +51,32 @@ public interface KeyValuesEnvironment {
 	 * @return an array of main method arguments
 	 */
 	default @NonNull String[] getMainArgs() {
-		return new @NonNull String[] {};
+		var logger = getLogger();
+		logger.warn("Main Args were requested but not provided. Using fallback 'sun.java.command'");
+		String value = getSystemProperties().getProperty("sun.java.command");
+		if (value == null) {
+			throw new IllegalStateException("Cannot get main args from 'sun.java.command' as it was not provided");
+		}
+		return fallbackMainArgs(value);
+	}
+
+	private static @NonNull String[] fallbackMainArgs(String sunJavaCommandValue) {
+
+		// Use fallback by extracting from system property
+		String command = sunJavaCommandValue;
+		if (!command.isEmpty()) {
+			// Split command into components (main class/jar is the first token)
+			List<String> components = new ArrayList<>(Arrays.asList(command.split("\\s+")));
+			// Remove the first element (main class or jar)
+			if (!components.isEmpty()) {
+				components.remove(0);
+			}
+			// Return remaining as the main args
+			return components.toArray(new @NonNull String[0]);
+		}
+
+		// Return an empty array if no arguments are available
+		return new String[0];
 	}
 
 	/**
@@ -356,16 +385,15 @@ final class SystemLogger implements Logger {
 
 }
 
-final class DefaultKeyValuesEnvironment implements KeyValuesEnvironment {
+record DefaultKeyValuesEnvironment(@NonNull String @Nullable [] mainArgs) implements KeyValuesEnvironment {
 
-	// private static final ThreadLocal<Logger> threadLocal = new
-	// ThreadLocal<>();
-	//
-	// static Logger localLogger() {
-	// var logger = threadLocal.get();
-	// if (logger == null) {
-	// return NoOpLogger.NOPLOGGER;
-	// }
-	// }
+	@Override
+	public @NonNull String[] getMainArgs() {
+		var args = mainArgs;
+		if (args == null) {
+			return KeyValuesEnvironment.super.getMainArgs();
+		}
+		return args;
+	}
 
 }
