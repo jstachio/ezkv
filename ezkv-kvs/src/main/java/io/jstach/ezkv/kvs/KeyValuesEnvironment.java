@@ -385,6 +385,7 @@ final class SystemLogger implements Logger {
 
 }
 
+@SuppressWarnings("ArrayRecordComponent") // TODO We will fix this later.
 record DefaultKeyValuesEnvironment(@NonNull String @Nullable [] mainArgs) implements KeyValuesEnvironment {
 
 	@Override
