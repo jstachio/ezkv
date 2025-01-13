@@ -4,7 +4,7 @@
   <artifactId>ezkv-maven-parent</artifactId>
   <name>ezkv-maven-parent</name>
   <packaging>pom</packaging>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.5.0-SNAPSHOT</version>
   <url>https://github.com/jstachio/ezkv</url>
   <description>
     A non-opinionated Java bootstrapping configuration library that allows
@@ -18,7 +18,7 @@
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <metainf-services.version>1.11</metainf-services.version>
-    <project.build.outputTimestamp>1736018355</project.build.outputTimestamp>
+    <project.build.outputTimestamp>1736787838</project.build.outputTimestamp>
     <doc.resources>../</doc.resources>
     <doc.snippets>ezkv/src/test/java</doc.snippets>
     <deploy>snapshot</deploy>
