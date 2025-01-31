@@ -268,11 +268,21 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 	KeyValues filter(InternalKeyValuesResource resource, KeyValues keyValues, Node node, boolean skipResourceKeys)
 			throws IOException {
 		var filters = resource.filters();
-		if (filters.isEmpty()) {
+		ImplicitFilters ds = switch (system) {
+			case DefaultKeyValuesSystem _ds -> _ds.implicitFilters();
+		};
+		if (filters.isEmpty() && ds.isNoop()) {
 			return keyValues;
 		}
 		Predicate<KeyValue> keyValuePredicate = skipResourceKeys ? resourceParser::isResourceKey : kv -> false;
 		FilterContext context = new FilterContext(system.environment(), resource.parameters(), keyValuePredicate);
+		/*
+		 * Run implicit pre filters.
+		 */
+		keyValues = ds.run(context, keyValues, ImplicitFilterType.PRE);
+		/*
+		 * Run explicit filters
+		 */
 		for (var f : filters) {
 			try {
 				var opt = system.filter().filter(context, keyValues, f);
@@ -287,6 +297,10 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 						"Resource has bad filter expression. filter: " + f + " resource: " + describe(node), e);
 			}
 		}
+		/*
+		 * Run implicit post filters
+		 */
+		keyValues = ds.run(context, keyValues, ImplicitFilterType.POST);
 		return keyValues;
 	}
 

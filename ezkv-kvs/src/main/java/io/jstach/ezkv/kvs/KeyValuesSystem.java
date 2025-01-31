@@ -4,7 +4,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -53,6 +55,9 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 	 */
 	public KeyValuesEnvironment environment();
 
+	/*
+	 * TODO does this really need to be exposed?
+	 */
 	/**
 	 * Returns a composite {@link KeyValuesLoaderFinder} that aggregates all loader
 	 * finders added to the {@link Builder} or found via the {@link ServiceLoader}, if
@@ -71,10 +76,13 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 	 */
 	public KeyValuesMediaFinder mediaFinder();
 
+	/*
+	 * TODO does this really need to be exposed?
+	 */
 	/**
 	 * Returns a composite {@link KeyValuesFilter} that aggregates all the filters added
 	 * to the {@link Builder} or found via the {@link ServiceLoader}, if configured. This
-	 * composite allows finding media handlers that can handle specific resources byrs.
+	 * composite allows finding filters that are usually activated by filter id.
 	 * @return the composite filter
 	 */
 	public KeyValuesFilter filter();
@@ -161,6 +169,9 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 
 		private List<KeyValuesFilter> filters = new ArrayList<>(List.of(DefaultKeyValuesFilter.values()));
 
+		private EnumMap<ImplicitFilterType, List<KeyValuesFilter.Filter>> implicitFilters = new EnumMap<>(
+				ImplicitFilterType.class);
+
 		private @Nullable ServiceLoader<KeyValuesServiceProvider> serviceLoader;
 
 		private Builder() {
@@ -198,13 +209,63 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 		}
 
 		/**
-		 * Adds a filter to the filter chain.
+		 * Adds a filter to the filter chain. Filters usually react based on
+		 * {@link KeyValuesFilter.Filter#filter()} id that corresponds to it.
 		 * @param filter the filter to add
 		 * @return this
 		 * @see KeyValuesFilter
 		 */
 		public Builder filter(KeyValuesFilter filter) {
 			this.filters.add(filter);
+			return this;
+		}
+
+		/**
+		 * Adds an implicit filter call that will happen on every resource loaded
+		 * regardless of what {@link KeyValuesResource#KEY_FILTER} resource keys are set
+		 * (explicit) and will be called <strong>BEFORE</strong> the explicit filters.
+		 * <p>
+		 * <strong>Example:</strong> Assume we have
+		 * {@code _load_props=classpath:/a.properties?_filter_grep=stuff}. If this method
+		 * is called with filter=x and expression=exp the resource call will implicitely
+		 * be:
+		 * {@code _load_props=classpath:/a.properties?_filter_x=exp&_filter_grep=stuff}.
+		 * </p>
+		 * @param filter id of the filter. If no filter responds to the id it will not be
+		 * an and the original key values will be used.
+		 * @param expression code to pass to the filter and its interpretation depends on
+		 * the filter.
+		 * @return this
+		 */
+		public Builder addPreFilter(String filter, String expression) {
+			return addImplicitFilter(ImplicitFilterType.PRE, filter, expression);
+		}
+
+		/**
+		 * Adds an implicit filter call that will happen on every resource loaded
+		 * regardless of what {@link KeyValuesResource#KEY_FILTER} resource keys are set
+		 * (explicit) and will be called <strong>AFTER</strong> the explicit filters.
+		 * <p>
+		 * <strong>Example:</strong> Assume we have
+		 * {@code _load_props=classpath:/a.properties?_filter_grep=stuff}. If this method
+		 * is called with filter=x and expression=exp the resource call will implicitely
+		 * be:
+		 * {@code _load_props=classpath:/a.properties?_filter_grep=stuff&_filter_x=exp}
+		 * </p>
+		 * @param filter id of the filter. If no filter responds to the id it will not be
+		 * an and the original key values will be used.
+		 * @param expression code to pass to the filter and its interpretation depends on
+		 * the filter.
+		 * @return this
+		 */
+		public Builder addPostFilter(String filter, String expression) {
+			return addImplicitFilter(ImplicitFilterType.POST, filter, expression);
+		}
+
+		private Builder addImplicitFilter(ImplicitFilterType type, String filter, String expression) {
+			KeyValuesFilter.Filter f = new KeyValuesFilter.Filter(filter, expression, "");
+			var list = Objects.requireNonNull(this.implicitFilters.computeIfAbsent(type, k -> new ArrayList<>()));
+			list.add(f);
 			return this;
 		}
 
@@ -296,14 +357,43 @@ public sealed interface KeyValuesSystem extends AutoCloseable {
 			};
 			KeyValuesMediaFinder mediaFinder = new CompositeMediaFinder(mediaFinders);
 			KeyValuesFilter filter = new CompositeKeyValuesFilter(filters);
-
-			var kvs = new DefaultKeyValuesSystem(environment, loadFinder, mediaFinder, filter, providers);
+			ImplicitFilters _impliciFilters = new ImplicitFilters(implicitFilters, filter);
+			var kvs = new DefaultKeyValuesSystem(environment, loadFinder, mediaFinder, filter, providers,
+					_impliciFilters);
 			kvs.environment().getLogger().init(kvs);
 			return kvs;
 		}
 
 	}
 
+}
+
+enum ImplicitFilterType {
+
+	PRE, POST;
+
+}
+
+record ImplicitFilters(Map<ImplicitFilterType, List<KeyValuesFilter.Filter>> implicitFilters,
+		KeyValuesFilter compositeFilter) {
+	KeyValues run(KeyValuesFilter.FilterContext context, KeyValues keyValues, ImplicitFilterType type) {
+		var filters = implicitFilters.get(type);
+		if (filters == null) {
+			return keyValues;
+		}
+		for (var filter : filters) {
+			var kvs = compositeFilter.filter(context, keyValues, filter).orElse(null);
+			if (kvs != null) {
+				keyValues = kvs;
+			}
+		}
+		return keyValues;
+
+	}
+
+	boolean isNoop() {
+		return implicitFilters.isEmpty();
+	}
 }
 
 record CompositeKeyValuesFilter(List<KeyValuesFilter> filters) implements KeyValuesFilter {
@@ -354,9 +444,11 @@ record CompositeMediaFinder(List<KeyValuesMediaFinder> finders) implements KeyVa
 /**
  * A default implementation of {@link KeyValuesSystem}.
  */
-record DefaultKeyValuesSystem(KeyValuesEnvironment environment, KeyValuesLoaderFinder loaderFinder,
-		KeyValuesMediaFinder mediaFinder, KeyValuesFilter filter,
-		List<KeyValuesProvider> providers) implements KeyValuesSystem {
+record DefaultKeyValuesSystem( //
+		KeyValuesEnvironment environment, //
+		KeyValuesLoaderFinder loaderFinder, //
+		KeyValuesMediaFinder mediaFinder, KeyValuesFilter filter, List<KeyValuesProvider> providers,
+		ImplicitFilters implicitFilters) implements KeyValuesSystem {
 
 	DefaultKeyValuesSystem {
 		providers = List.copyOf(providers);

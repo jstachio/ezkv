@@ -493,7 +493,7 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * <ol>
 	 * <li> Checking resource parameter of {@value #SCHEMA_STDIN_PARAM} is <code>true</code>.
 	 * </li>
-	 * <li>Setting {@value #SCHEMA_STDIN_MAIN_ARG_PARAM} to 
+	 * <li>Setting {@value #SCHEMA_STDIN_MAIN_ARG_PARAM} to
 	 * {@linkplain KeyValuesEnvironment#getMainArgs() command line argument} to check if present.
 	 * </li>
 	 * <li>
@@ -553,6 +553,11 @@ public sealed interface KeyValuesResource extends NamedKeyValuesSource, KeyValue
 	 * akin to <code>String.join(expression)</code>
 	 */
 	public static final String FILTER_JOIN = "join";
+
+	/*
+	 * TODO filter target is messy. Ideally filters only work with keys. Perhaps OOB will
+	 * only allow sed substitution with a flag to make a value change.
+	 */
 
 	/**
 	 * This suffix on the end of the filter name will tell filters that support to target

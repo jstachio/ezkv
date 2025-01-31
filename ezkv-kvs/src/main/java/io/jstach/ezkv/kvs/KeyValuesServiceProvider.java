@@ -280,6 +280,13 @@ public sealed interface KeyValuesServiceProvider {
 	 * The {@link #filter(FilterContext, KeyValues, Filter)} method performs the filtering
 	 * operation.
 	 * </p>
+	 *
+	 * <h2>Implementation Notes</h2>
+	 *
+	 * In general it is not recommend that filters change values of key values however if
+	 * a filter would like to modify the value of key value (not true modify since key
+	 * values are immutable but copy) {@link KeyValue#withSealedValue(String)} should be
+	 * used otherwise the value will be likely replaced by downstream interpolation.
 	 */
 	public non-sealed interface KeyValuesFilter extends KeyValuesServiceProvider {
 
@@ -312,7 +319,9 @@ public sealed interface KeyValuesServiceProvider {
 		 * looking up parameters. Defaults to empty string.
 		 */
 		public record Filter(String filter, String expression, String name) {
-
+			/*
+			 * TODO remove filter name
+			 */
 		}
 
 		/**
