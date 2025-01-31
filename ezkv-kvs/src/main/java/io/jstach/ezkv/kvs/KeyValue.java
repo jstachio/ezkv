@@ -115,16 +115,40 @@ public record KeyValue(String key, String expanded, Meta meta) {
 	 * @return new key value.
 	 */
 	public KeyValue withKey(String key) {
+		if (key.equals(this.key))
+			return this;
 		return new KeyValue(key, expanded, meta);
 	}
 
 	/**
-	 * Creates a new {@code KeyValue} with an updated expanded value.
+	 * Creates a new {@code KeyValue} with an updated expanded value. <strong> NOTE that a
+	 * new keyvalue could have this expanded value changed (with a new key value) when
+	 * interpolated <em>which happens after each load of a resource</em>. </strong>. If
+	 * the value is to be changed permanetly which is usually done by a filter changing
+	 * the value of the key (and not the raw value) {@link #withSealedValue(String)}
+	 * should be called. The key value will no longer be re-interpolated with the raw
+	 * original.
 	 * @param expanded the new expanded value.
 	 * @return a new {@code KeyValue} with the updated expanded value.
 	 */
 	public KeyValue withExpanded(String expanded) {
+		if (expanded.equals(this.expanded))
+			return this;
 		return new KeyValue(key, expanded, meta);
+	}
+
+	/**
+	 * Because EZKV reinterpolates all loaded key values on each resource load to support
+	 * chaining the expanded value will changed based on {@link #raw()}. Thus if a filter
+	 * or something similar would like to change a value without changing the raw loaded
+	 * value this method should be used. Ideally filters should not add values to be
+	 * interpolated as that would be confusing and this call prevents that by setting the
+	 * {@link Flag#NO_INTERPOLATION}.
+	 * @param value expanded value that will not be replaced by interpolation.
+	 * @return a new key value.
+	 */
+	public KeyValue withSealedValue(String value) {
+		return addFlags(Set.of(Flag.NO_INTERPOLATION)).withExpanded(value);
 	}
 
 	/**

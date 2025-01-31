@@ -104,6 +104,7 @@ class KeyValuesSystemTest {
 		@SuppressWarnings("null")
 		var kvs = KeyValuesSystem.builder()
 			.environment(environment)
+			.addPostFilter("sed_val", "s/REPLACE/works/")
 			.provider(new MyProvider()) //
 			.build() //
 			.loader() //
@@ -123,6 +124,7 @@ class KeyValuesSystemTest {
 					ref1=refValue
 					stuff=/home/kenny
 					blah=/home/kenny
+					implicit_filter=works
 					message=/home/kenny hello
 					profile1=loaded
 					profile1=loaded 2
@@ -146,6 +148,7 @@ class KeyValuesSystemTest {
 					ref1=refValue
 					stuff=/home/kenny
 					blah=/home/kenny
+					implicit_filter=works
 					message=/home/kenny hello
 					profile1=loaded
 					profile1=loaded 2
@@ -174,6 +177,7 @@ class KeyValuesSystemTest {
 					KeyValue[key='ref1', raw='refValue', expanded='refValue', source=Source[uri=provider:///MyProvider, reference=[key='_load_MyProvider0', in='provider:///'], index=1]]
 					KeyValue[key='stuff', raw='${user.home}', expanded='/home/kenny', source=Source[uri=classpath:/test-props/testLoader.properties, index=1]]
 					KeyValue[key='blah', raw='${MISSING:-${stuff}}', expanded='/home/kenny', source=Source[uri=classpath:/test-props/testLoader.properties, index=2]]
+					KeyValue[key='implicit_filter', raw='REPLACE', expanded='works', source=Source[uri=classpath:/test-props/testLoader.properties, index=3], flags=[NO_INTERPOLATION]]
 					KeyValue[key='message', raw='${stuff} hello', expanded='/home/kenny hello', source=Source[uri=classpath:/test-props/testLoader-child.properties, reference=[key='_load_child', in='classpath:/test-props/testLoader.properties'], index=1]]
 					KeyValue[key='profile1', raw='loaded', expanded='loaded', source=Source[uri=classpath:/test-props/testLoader-profile1.properties, reference=[key='_load_profiles0', in='profile.classpath:/test-props/testLoader-__PROFILE__.properties'], index=1]]
 					KeyValue[key='profile1', raw='loaded 2', expanded='loaded 2', source=Source[uri=classpath:/test-props/testLoader-profile2.properties, reference=[key='_load_profiles1', in='profile.classpath:/test-props/testLoader-__PROFILE__.properties'], index=1]]

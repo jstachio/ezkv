@@ -4,8 +4,10 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SequencedMap;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import io.jstach.ezkv.kvs.DefaultSedParser.Command;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesFilter;
 
 @SuppressWarnings("EnumOrdinal")
@@ -24,7 +26,7 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 					return true;
 				}
 				String v = switch (target) {
-					case KEY -> kv.key();
+					case KEY, DEFAULT -> kv.key();
 					case VALUE -> kv.value();
 				};
 				return pattern.matcher(v).find();
@@ -38,35 +40,36 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 			String sed = expression;
 			Objects.requireNonNull(sed);
 			var command = DefaultSedParser.parse(sed);
-			return switch (target) {
-				case KEY -> keyValues.flatMap(kv -> {
-					if (context.keyValueIgnore().test(kv)) {
-						return KeyValues.of(kv);
-					}
-					String key = command.execute(kv.key());
-					if (key == null) {
-						return KeyValues.empty();
-					}
-					if (kv.key().equals(key)) {
-						return KeyValues.of(kv);
-					}
-					return KeyValues.of(kv.withKey(key));
-				});
-				case VALUE -> keyValues.flatMap(kv -> {
-					if (context.keyValueIgnore().test(kv)) {
-						return KeyValues.of(kv);
-					}
-					String value = command.execute(kv.value());
-					if (value == null) {
-						return KeyValues.empty();
-					}
-					if (kv.value().equals(value)) {
-						return KeyValues.of(kv);
-					}
-					return KeyValues.of(kv.withExpanded(value));
-				});
+			var ignorePredicate = context.keyValueIgnore();
+			return keyValues.flatMap(kv -> forKeyValue(target, command, kv, ignorePredicate));
+		}
+
+		private KeyValues forKeyValue(Target target, Command command, KeyValue kv,
+				Predicate<KeyValue> ignorePredicate) {
+			if (ignorePredicate.test(kv)) {
+				return KeyValues.of(kv);
+			}
+
+			String result = switch (target) {
+				case KEY, DEFAULT -> command.execute(kv.key());
+				case VALUE -> command.execute(kv.value());
 			};
 
+			if (result == null) {
+				return KeyValues.empty();
+			}
+
+			return switch (target) {
+				case KEY, DEFAULT -> {
+					yield KeyValues.of(kv.withKey(result));
+				}
+				case VALUE -> {
+					if (kv.value().equals(result)) {
+						yield KeyValues.of(kv);
+					}
+					yield KeyValues.of(kv.withSealedValue(result));
+				}
+			};
 		}
 
 	},
@@ -123,7 +126,7 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 					filterName.length() - KeyValuesResource.FILTER_TARGET_VALUE.length());
 		}
 		else {
-			target = Target.KEY;
+			target = Target.DEFAULT;
 			resolvedFilterName = filterName;
 		}
 
@@ -137,7 +140,7 @@ enum DefaultKeyValuesFilter implements KeyValuesFilter {
 
 	enum Target {
 
-		KEY, VALUE;
+		KEY, VALUE, DEFAULT;
 
 	}
 

@@ -173,6 +173,13 @@ final class DefaultSedParser {
 
 	}
 
+	// enum ResultType {
+	// DELETE,
+	// IGNORE,
+	// UPDATE
+	// }
+	// record Result(ResultType type, String value) {}
+
 	sealed interface Command permits SubstitutionCommand, DeleteCommand {
 
 		@Nullable
