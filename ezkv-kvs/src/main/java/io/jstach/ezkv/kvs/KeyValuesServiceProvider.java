@@ -496,7 +496,6 @@ record DefaultLoaderContext(KeyValuesEnvironment environment, KeyValuesMediaFind
 	 * Finds a list of profiles based on context and passed in parameters.
 	 * @param parameters from resource or filter.
 	 * @return list of profiles
-	 * @throws FileNotFoundException
 	 */
 	static List<String> profiles(KeyValuesEnvironment environment, Variables variables, Parameters parameters) {
 		var vars = Variables.builder().add(parameters).add(variables.renameKey(environment::qualifyMetaKey)).build();
