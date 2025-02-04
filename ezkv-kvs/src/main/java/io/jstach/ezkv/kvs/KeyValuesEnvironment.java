@@ -106,6 +106,29 @@ public interface KeyValuesEnvironment {
 		return new Random();
 	}
 
+	// TODO revisit
+	/**
+	 * Tranforms key names used by plugins for configuration of the plugins on the
+	 * variable store. Most plugins can be explicitely configured with
+	 * {@link KeyValuesResource#parameters()} but some plugins will implicitely check the
+	 * currently resolved key values (variable store) as a fallback.
+	 *
+	 * <p>
+	 * <strong>Example</strong>
+	 * </p>
+	 * <p>
+	 * The profiles resource loader plugin will check the variable store for a key called
+	 * <code>profiles</code> to determine what profiles are enabled. The default qualify
+	 * will append "<code>_</code>" so "<code>_profiles</code>" will be used to lookup the
+	 * enabled profiles.
+	 * </p>
+	 * @param key to be transformed usually prefixed
+	 * @return by default a "<code>_</code>" is prefixed to the input string.
+	 */
+	default String qualifyMetaKey(String key) {
+		return "_" + key;
+	}
+
 	/**
 	 * Retrieves the standard input stream. By default, delegates to {@link System#in}.
 	 * @return the standard input stream or an empty input stream if {@code System.in} is
@@ -212,8 +235,9 @@ public interface KeyValuesEnvironment {
 
 	/**
 	 * Key Values Resource focused logging facade and event capture. Logging level
-	 * condition checking is purposely not supplied as these are more like events and many
-	 * implementations will replay when the actual logging sytem loads.
+	 * condition checking is purposely not supplied (with the exception of debug) as these
+	 * are more like events and many implementations will replay when the actual logging
+	 * sytem loads.
 	 */
 	public interface Logger {
 
@@ -245,6 +269,14 @@ public interface KeyValuesEnvironment {
 		}
 
 		/**
+		 * If debug logging is enabled.
+		 * @return true if debug is enabled.
+		 */
+		default boolean isDebug() {
+			return true;
+		}
+
+		/**
 		 * Logs a debug-level message.
 		 * @param message the message to log
 		 */
@@ -267,7 +299,9 @@ public interface KeyValuesEnvironment {
 		 * @param resource the resource being loaded
 		 */
 		default void load(KeyValuesResource resource) {
-			debug(KeyValueReference.describe(new StringBuilder("Loading "), resource, true).toString());
+			if (isDebug()) {
+				debug(KeyValueReference.describe(new StringBuilder("Loading "), resource, true).toString());
+			}
 		}
 
 		/**
@@ -284,7 +318,9 @@ public interface KeyValuesEnvironment {
 		 * @param exception the exception that occurred when the resource was not found
 		 */
 		default void missing(KeyValuesResource resource, Exception exception) {
-			debug(KeyValueReference.describe(new StringBuilder("Missing "), resource, false).toString());
+			if (isDebug()) {
+				debug(KeyValueReference.describe(new StringBuilder("Missing "), resource, false).toString());
+			}
 		}
 
 		/**
@@ -365,6 +401,11 @@ final class SystemLogger implements Logger {
 	SystemLogger(java.lang.System.Logger logger) {
 		super();
 		this.logger = logger;
+	}
+
+	@Override
+	public boolean isDebug() {
+		return logger.isLoggable(Level.DEBUG);
 	}
 
 	@Override

@@ -138,7 +138,7 @@ class QueueLogger implements Logger {
 
 	@Override
 	public void init(KeyValuesSystem system) {
-		events.add(new Event(System.Logger.Level.INFO, "Initializing"));
+		events.add(new Event(System.Logger.Level.DEBUG, "Initializing"));
 	}
 
 	@Override
@@ -159,7 +159,7 @@ class QueueLogger implements Logger {
 
 	@Override
 	public void closed(KeyValuesSystem system) {
-		System.Logger logger = System.getLogger("io.jstach.ezkv.boot.ezkvConfig");
+		System.Logger logger = System.getLogger("io.jstach.ezkv.boot.EzkvConfig");
 		Event e;
 		while ((e = events.poll()) != null) {
 			logger.log(e.level, e.message);
@@ -171,9 +171,9 @@ class QueueLogger implements Logger {
 		var err = System.err;
 		Event e;
 		while ((e = events.poll()) != null) {
-			err.println("[" + Logger.formatLevel(e.level) + "] io.jstach.ezkv.boot.ezkvConfig - " + e.message);
+			err.println("[" + Logger.formatLevel(e.level) + "] io.jstach.ezkv.boot.EzkvConfig - " + e.message);
 		}
-		err.println("[ERROR] io.jstach.ezkv.boot.ezkvConfig - " + exception.getMessage());
+		err.println("[ERROR] io.jstach.ezkv.boot.EzkvConfig - " + exception.getMessage());
 		exception.printStackTrace(err);
 	}
 
@@ -201,6 +201,8 @@ final class Holder {
 		try (var system = KeyValuesSystem.builder() //
 			.useServiceLoader()
 			.environment(new BootEnvironment(logger))
+			.filter(new OnProfileKeyValuesFilter())
+			.addPreFilter("onprofile", "")
 			.build()) {
 			var properties = Holder.PROPERTIES;
 
@@ -209,7 +211,8 @@ final class Holder {
 			if (properties != null) {
 				loader.add("setDefaultProperties", properties);
 			}
-			var kvs = loader.variables(Variables::ofSystemProperties)
+			var kvs = loader //
+				.variables(Variables::ofSystemProperties)
 				.variables(Variables::ofSystemEnv)
 				.variables(RandomVariables::of)
 				.add("classpath:/application.properties", b -> b.name("application").noRequire(true))

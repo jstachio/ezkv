@@ -1,5 +1,7 @@
 package io.jstach.ezkv.boot;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -12,7 +14,9 @@ class EzkvConfigTest {
 				"logging.level.io.jstach.ezkv", "DEBUG");
 		EzkvConfig.setDefaultProperties(m);
 		var config = EzkvConfig.of();
-		config.reload();
+		// config.reload();
+
+		assertEquals("Hello", config.getProperty("DEMO"));
 
 	}
 
