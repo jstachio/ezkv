@@ -32,7 +32,9 @@ record RandomVariables(Random source, KeyValuesEnvironment.Logger logger, String
 		if (!key.startsWith(prefix)) {
 			return null;
 		}
-		logger.debug(String.format("Generating random property for '%s'", key));
+		if (logger.isDebug()) {
+			logger.debug(String.format("Generating random property for '%s'", key));
+		}
 		return "" + getRandomValue(key.substring(prefix.length()));
 	}
 

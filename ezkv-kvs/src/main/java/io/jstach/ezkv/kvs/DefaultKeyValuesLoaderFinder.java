@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -356,31 +355,28 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		uriString = uriString.substring(scheme.length());
 		// var uri = URI.create(uriString);
 		var logger = context.environment().getLogger();
-		var vars = Variables.builder()
-			.add(resource.parameters())
-			.add(context.variables().renameKey(k -> "_" + k))
-			.build();
-		var profile = vars.findEntry("profile", "profile.active", "profile.default")
-			.map(e -> e.getValue())
-			.orElse(null);
-		if (profile == null) {
-			String error = "profile parameter is required. Set it to CSV list of profiles.";
-			logger.info("Profile(s) could not be found for resource. resource: " + resource.description()
-					+ " tried parameter: " + context.formatParameterKey(resource, "profile"));
-			// TODO custom exception for missing parameters ?
-			throw new FileNotFoundException(error);
-		}
+		List<String> profiles = profiles(context, resource);
+
 		if (!uriString.contains("__PROFILE__")) {
-			throw new IOException(
-					"Resource needs '__PROFILE__' in URI to be replaced by extracted profiles. URI: " + uriString);
+			int dotIndex = uriString.lastIndexOf(".");
+			if (dotIndex <= 0) {
+				throw new IOException(
+						"Resource needs '__PROFILE__' in URI to be replaced by extracted profiles. URI: " + uriString);
+			}
+			uriString = uriString.substring(0, dotIndex) + "-__PROFILE__" + uriString.substring(dotIndex);
 		}
-		List<String> profiles = Stream.of(profile.split(",")).filter(p -> !p.isBlank()).distinct().toList();
 
 		logger.info("Found profiles: " + profiles);
 
 		List<KeyValuesResource> childResources = new ArrayList<>();
 		int i = 0;
 		for (var p : profiles) {
+			if (p.equals("none")) {
+				if (logger.isDebug()) {
+					logger.debug("Skipping profile 'none'");
+				}
+				continue;
+			}
 			var value = uriString.replace("__PROFILE__", p);
 			var b = resource.toBuilder();
 			b.uri(URI.create(value));
@@ -390,6 +386,21 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		}
 		var kvs = childResources(context, resource, childResources);
 		return kvs;
+	}
+
+	private static List<String> profiles(LoaderContext context, KeyValuesResource resource)
+			throws FileNotFoundException {
+		var profiles = context.profiles(resource.parameters());
+		if (profiles.isEmpty()) {
+			String error = "profile parameter is required. Set it to CSV list of profiles.";
+			context.environment()
+				.getLogger()
+				.info("Profile(s) could not be found for resource. resource: " + resource.description()
+						+ " tried parameter: " + context.formatParameterKey(resource, "profile"));
+			// TODO custom exception for missing parameters ?
+			throw new FileNotFoundException(error);
+		}
+		return profiles;
 	}
 
 	// TODO this is cool but also kind of hack
@@ -498,7 +509,9 @@ enum DefaultKeyValuesLoaderFinder implements KeyValuesLoaderFinder {
 		 * A use case might be some key value that contains JSON.
 		 */
 		var logger = context.environment().getLogger();
-		logger.debug("Using key specified in URI path. key: " + path + " resource: " + resource);
+		if (logger.isDebug()) {
+			logger.debug("Using key specified in URI path. key: " + path + " resource: " + resource);
+		}
 
 		var kvResource = kvs.filter(kv -> kv.key().equals(path)).last().orElse(null);
 		if (kvResource == null) {

@@ -275,7 +275,8 @@ class DefaultKeyValuesSourceLoader implements KeyValuesSourceLoader {
 			return keyValues;
 		}
 		Predicate<KeyValue> keyValuePredicate = skipResourceKeys ? resourceParser::isResourceKey : kv -> false;
-		FilterContext context = new FilterContext(system.environment(), resource.parameters(), keyValuePredicate);
+		FilterContext context = new FilterContext(system.environment(), variables, resource.parameters(),
+				keyValuePredicate);
 		/*
 		 * Run implicit pre filters.
 		 */

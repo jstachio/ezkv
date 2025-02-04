@@ -67,7 +67,7 @@ class FiltersTest {
 		Filter filter = new Filter(filterName, expression, "blah");
 		var s = KeyValuesSystem.builder().build();
 		Predicate<KeyValue> ignore = kv -> false;
-		FilterContext context = new FilterContext(s.environment(), Parameters.of(Map.of()), ignore);
+		FilterContext context = new FilterContext(s.environment(), Variables.empty(), Parameters.of(Map.of()), ignore);
 		var result = s.filter().filter(context, kvs, filter).orElseThrow();
 		return result;
 	}

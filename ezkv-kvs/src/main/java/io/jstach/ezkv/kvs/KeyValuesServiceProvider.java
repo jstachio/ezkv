@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesMediaFinder;
 import io.jstach.ezkv.kvs.KeyValuesServiceProvider.KeyValuesProvider;
@@ -299,14 +300,24 @@ public sealed interface KeyValuesServiceProvider {
 		 *
 		 * @param environment the environment used to access system-level properties and
 		 * resources
+		 * @param variables current variable store
 		 * @param parameters resource parameters that come from
 		 * {@link KeyValuesResource#KEY_PARAM} keys.
 		 * @param keyValueIgnore keys that should be ignored and not filtered if the
 		 * predicate returns <code>true</code>.
 		 * @see KeyValuesResource#FLAG_NO_FILTER_RESOURCE_KEYS
 		 */
-		public record FilterContext(KeyValuesEnvironment environment, Parameters parameters,
+		public record FilterContext(KeyValuesEnvironment environment, //
+				Variables variables, //
+				Parameters parameters, //
 				Predicate<KeyValue> keyValueIgnore) {
+			/**
+			 * Wil resolve the currently enabled profiles. TODO this may change before 1.0
+			 * @return list of profiles
+			 */
+			public List<String> profiles() {
+				return DefaultLoaderContext.profiles(environment, variables, parameters);
+			}
 		}
 
 		/**
@@ -449,6 +460,15 @@ sealed interface Context {
 	 */
 	String formatParameterKey(KeyValuesResource resource, String parameterName);
 
+	/**
+	 * Finds a list of profiles based on context and passed in parameters.
+	 * @param parameters from resource or filter.
+	 * @return list of profiles
+	 */
+	default List<String> profiles(Parameters parameters) {
+		return DefaultLoaderContext.profiles(environment(), variables(), parameters);
+	}
+
 }
 
 record DefaultLoaderContext(KeyValuesEnvironment environment, KeyValuesMediaFinder mediaFinder, Variables variables,
@@ -470,6 +490,22 @@ record DefaultLoaderContext(KeyValuesEnvironment environment, KeyValuesMediaFind
 	@Override
 	public String formatParameterKey(KeyValuesResource resource, String parameterName) {
 		return resourceParser.formatParameterKey(resource, parameterName);
+	}
+
+	/**
+	 * Finds a list of profiles based on context and passed in parameters.
+	 * @param parameters from resource or filter.
+	 * @return list of profiles
+	 * @throws FileNotFoundException
+	 */
+	static List<String> profiles(KeyValuesEnvironment environment, Variables variables, Parameters parameters) {
+		var vars = Variables.builder().add(parameters).add(variables.renameKey(environment::qualifyMetaKey)).build();
+		var profile = vars.findEntry("profile", "profiles").map(e -> e.getValue()).orElse(null);
+		if (profile == null) {
+			return List.of();
+		}
+		List<String> profiles = Stream.of(profile.split(",")).filter(p -> !p.isBlank()).distinct().toList();
+		return profiles;
 	}
 
 }
