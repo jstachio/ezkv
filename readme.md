@@ -57,6 +57,10 @@ other places using key values in the configuration file. Ezkv can even allow con
 
 Another use case might be to simulate Spring Boot's configuration loading but without all of Spring Boot. Ezkv can do that declaratively through key values. In fact a user could make the previously mentioned ripgrep environment variable do a Spring Boot like load of configuration.
 
+Ezkv is not a property lookup or configuration binding (mapping to user defined types) framework.
+Its only job is to find key values. Because of this it can be used with any other downstream configuration 
+frameworks as a source including Spring, or J2EE applications!
+
 ## Example
 
 A simple example using `java.util.Properties` files that could be parsed to `KeyValues` would be:
